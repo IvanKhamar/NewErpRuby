@@ -1,0 +1,11 @@
+<% content_for(:title, "Вхід") %>
+<section class="narrow">
+  <h1>Вхід</h1>
+  <%= form_with url: admin_session_path do |f| %>
+    <%= f.label :username, "Логін" %>
+    <%= f.text_field :username, autofocus: true, autocomplete: "username", required: true %>
+    <%= f.label :password, "Пароль" %>
+    <%= f.password_field :password, autocomplete: "current-password", required: true %>
+    <%= f.submit "Увійти" %>
+  <% end %>
+</section>

@@ -1,0 +1,42 @@
+<% content_for(:title, "Замовлення №#{@order.id}") %>
+<h1>Замовлення №<%= @order.id %></h1>
+
+<div class="grid">
+  <section>
+    <h2>Клієнт</h2>
+    <p><%= @order.customer_name %><br><%= @order.telephone %><br><%= @order.email %></p>
+    <p><%= @order.shipping_method %>: <%= @order.shipping_city %> <%= @order.shipping_address %></p>
+    <p><%= @order.payment_method %></p>
+    <% if @order.comment.present? %><p class="muted"><%= @order.comment %></p><% end %>
+  </section>
+  <section>
+    <h2>Статус</h2>
+    <p><span class="badge" style="--badge: <%= @order.status&.color.presence || '#888' %>"><%= @order.status&.name %></span>
+       · <%= @order.source&.name %> · <%= @order.manager&.full_name %></p>
+    <%= form_with url: status_admin_order_path(@order), method: :patch do |f| %>
+      <%= f.select :status_id, @statuses.map { |s| [s.name, s.order_status_id] }, selected: @order.order_status_id %>
+      <%= f.submit "Змінити статус" %>
+    <% end %>
+  </section>
+</div>
+
+<h2>Товари</h2>
+<table>
+  <thead><tr><th>Товар</th><th>Модель</th><th>К-сть</th><th>Ціна</th><th>Сума</th></tr></thead>
+  <tbody>
+    <% @order.products.each do |line| %>
+      <tr><td><%= line.name %></td><td><%= line.model %></td><td class="num"><%= line.quantity %></td>
+          <td class="num"><%= number_with_precision(line.price, precision: 2) %></td>
+          <td class="num"><%= number_with_precision(line.total, precision: 2) %></td></tr>
+    <% end %>
+  </tbody>
+  <tfoot><tr><td colspan="4">Разом</td><td class="num"><%= number_with_precision(@order.total, precision: 2) %> <%= @order.currency_code %></td></tr></tfoot>
+</table>
+
+<h2>Історія статусів</h2>
+<ul>
+  <% @order.status_logs.each do |log| %>
+    <li><%= l(log.date_added, format: "%d.%m.%Y %H:%M") %> — <%= log.new_status&.name || log.new_status_id %> (<%= log.user&.full_name %>)</li>
+  <% end %>
+</ul>
+<p><%= link_to "← До списку", admin_orders_path %></p>

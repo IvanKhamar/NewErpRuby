@@ -1,0 +1,30 @@
+<% content_for(:title, "Замовлення") %>
+<h1>Замовлення</h1>
+<%= form_with url: admin_orders_path, method: :get, class: "filters" do |f| %>
+  <%= f.search_field :search, value: params[:search], placeholder: "№, телефон, ім'я, e-mail" %>
+  <%= f.select :status_id, @statuses.map { |s| [s.name, s.order_status_id] }, { include_blank: "Усі статуси", selected: params[:status_id] } %>
+  <%= f.submit "Знайти" %>
+<% end %>
+
+<table>
+  <thead><tr><th>№</th><th>Дата</th><th>Клієнт</th><th>Телефон</th><th>Сума</th><th>Статус</th><th>Менеджер</th></tr></thead>
+  <tbody>
+    <% @orders.each do |order| %>
+      <tr>
+        <td><%= link_to order.id, admin_order_path(order) %></td>
+        <td><%= l(order.date_added, format: "%d.%m.%Y %H:%M") %></td>
+        <td><%= order.customer_name %></td>
+        <td><%= order.telephone %></td>
+        <td class="num"><%= number_with_precision(order.total, precision: 2) %> <%= order.currency_code %></td>
+        <td><span class="badge" style="--badge: <%= order.status&.color.presence || '#888' %>"><%= order.status&.name %></span></td>
+        <td><%= order.manager&.full_name %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p class="pager">
+  Усього: <%= @total %>.
+  <%= link_to "← Попередня", admin_orders_path(request.query_parameters.merge(page: @page - 1)) if @page > 1 %>
+  <%= link_to "Наступна →", admin_orders_path(request.query_parameters.merge(page: @page + 1)) if @page * Admin::OrdersController::PAGE_SIZE < @total %>
+</p>

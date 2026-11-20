@@ -1,0 +1,25 @@
+<% content_for(:title, @item.name) %>
+<h1><%= @item.name %></h1>
+<p>Залишок: <strong><%= BusinessText.plain(@item.stock) %> <%= @item.unit %></strong>
+   (мінімум <%= BusinessText.plain(@item.min_stock) %>) · <%= @item.category&.name %> · <%= @item.supplier&.name %></p>
+
+<%= form_with url: adjustments_admin_stock_item_path(@item), class: "inline" do |f| %>
+  <%= f.label :delta, "Прихід (+) або витрата (−)" %>
+  <%= f.text_field :delta, inputmode: "decimal", required: true, size: 8 %>
+  <%= f.label :reason, "Причина" %>
+  <%= f.text_field :reason, required: true, maxlength: 255 %>
+  <%= f.submit "Записати" %>
+<% end %>
+
+<h2>Рух</h2>
+<table>
+  <thead><tr><th>Коли</th><th>Зміна</th><th>Було</th><th>Стало</th><th>Причина</th><th>Хто</th></tr></thead>
+  <tbody>
+    <% @movements.each do |m| %>
+      <tr><td><%= l(m.date_added, format: "%d.%m.%Y %H:%M") %></td><td class="num"><%= BusinessText.plain(m.delta) %></td>
+          <td class="num"><%= BusinessText.plain(m.stock_before) %></td><td class="num"><%= BusinessText.plain(m.stock_after) %></td>
+          <td><%= m.comment %></td><td><%= m.username %></td></tr>
+    <% end %>
+  </tbody>
+</table>
+<p><%= link_to "← До складу", admin_stock_items_path %></p>

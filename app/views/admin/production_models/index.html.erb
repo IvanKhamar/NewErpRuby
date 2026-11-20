@@ -1,0 +1,16 @@
+<% content_for(:title, "Виробництво") %>
+<h1>Моделі</h1>
+<table>
+  <thead><tr><th>Модель</th><th>Тип</th><th>Покроєно</th><th>Пошито</th><th>Мінімум</th></tr></thead>
+  <tbody>
+    <% @models.each do |model| %>
+      <tr class="<%= 'low' if model.total_sewn < model.min_total %>">
+        <td><%= link_to model.name, admin_production_model_path(model) %></td>
+        <td><%= model.type == ProductionModel::CLOTHING ? "Власний пошив" : "Готовий товар" %></td>
+        <td class="num"><%= BusinessText.plain(model.total_cut) %></td>
+        <td class="num"><%= BusinessText.plain(model.total_sewn) %></td>
+        <td class="num"><%= model.min_total %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

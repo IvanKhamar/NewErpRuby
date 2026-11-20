@@ -1,0 +1,29 @@
+<% content_for(:title, @model.name) %>
+<h1><%= @model.name %></h1>
+
+<%= form_with url: operations_admin_production_model_path(@model) do |f| %>
+  <table>
+    <thead><tr><th>Розмір</th><th>Покроєно</th><th>Пошито</th><th>Кількість</th></tr></thead>
+    <tbody>
+      <% @model.sizes.each do |size| %>
+        <tr><td><%= size.size_name %></td>
+            <td class="num"><%= BusinessText.plain(size.cut_stock) %></td>
+            <td class="num"><%= BusinessText.plain(size.sewn_stock) %></td>
+            <td><%= text_field_tag "quantities[#{size.id}]", nil, inputmode: "decimal", size: 6 %></td></tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= f.label :comment, "Коментар" %>
+  <%= f.text_field :comment, maxlength: 255 %>
+  <%= f.select :operation, [["+ Покроєно", "cut"], ["В пошив", "to-sewing"], ["+ Пошито", "sewn"], ["Відвантажено", "ship"]] %>
+  <%= f.submit "Записати" %>
+<% end %>
+
+<h2>Деталі крою та специфікація</h2>
+<ul>
+  <% @model.components.each do |component| %>
+    <li><strong><%= component.name %></strong>:
+      <%= component.bom_lines.map { |l| "#{l.item&.name} × #{BusinessText.plain(l.qty_per_unit)} #{l.item&.unit}" }.join(", ").presence || "специфікації немає" %></li>
+  <% end %>
+</ul>
+<p><%= link_to "← До моделей", admin_production_models_path %></p>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="uk">
+  <head>
+    <title><%= content_for(:title) || "NewErp" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body>
+    <header class="topbar">
+      <strong>NewErp</strong>
+      <% if current_user %>
+        <nav>
+          <%= link_to "Замовлення", admin_orders_path if allowed?(:orders) %>
+          <%= link_to "Склад", admin_stock_items_path if allowed?(:stock) %>
+          <%= link_to "Виробництво", admin_production_models_path if allowed?(:production) %>
+        </nav>
+        <span class="who"><%= current_user.full_name %> (<%= current_user.role %>)
+          <%= button_to "Вийти", admin_session_path, method: :delete, class: "link" %></span>
+      <% end %>
+    </header>
+    <main>
+      <% { notice: "ok", warning: "warn", alert: "error" }.each do |key, css| %>
+        <% if flash[key].present? %><p class="flash <%= css %>"><%= flash[key] %></p><% end %>
+      <% end %>
+      <%= yield %>
+    </main>
+  </body>
+</html>

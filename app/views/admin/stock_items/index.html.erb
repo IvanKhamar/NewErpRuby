@@ -1,0 +1,20 @@
+<% content_for(:title, "Склад") %>
+<h1>Склад розхідників</h1>
+<p>
+  <%= link_to "Усі", admin_stock_items_path %> ·
+  <%= link_to "Нижче мінімуму", admin_stock_items_path(below_minimum: 1) %>
+</p>
+<table>
+  <thead><tr><th>Назва</th><th>Категорія</th><th>Залишок</th><th>Мінімум</th><th>Ціна</th></tr></thead>
+  <tbody>
+    <% @items.each do |item| %>
+      <tr class="<%= 'low' if item.below_minimum? %>">
+        <td><%= link_to item.name, admin_stock_item_path(item) %></td>
+        <td><%= item.category&.name %></td>
+        <td class="num"><%= BusinessText.plain(item.stock) %> <%= item.unit %></td>
+        <td class="num"><%= BusinessText.plain(item.min_stock) %></td>
+        <td class="num"><%= number_with_precision(item.price, precision: 2) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
