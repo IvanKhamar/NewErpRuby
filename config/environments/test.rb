@@ -23,6 +23,9 @@ Rails.application.configure do
   # A real store, so the login throttle can count failed tries within a test.
   config.cache_store = :memory_store
 
+  # Jobs are only recorded in tests (assert_enqueued_with); specs run them by calling perform_now.
+  config.active_job.queue_adapter = :test
+
   # Render exception templates for rescuable exceptions and raise for other exceptions.
   config.action_dispatch.show_exceptions = :rescuable
 
