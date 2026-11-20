@@ -52,7 +52,60 @@ module Api
         render_json StockSerializers::Movement, item.movements
       end
 
+      MAX_SHEET_BYTES = 5 * 1024 * 1024
+      XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet".freeze
+
+      # An Excel sheet to count on, with an empty "Фактично" column.
+      def stocktaking_sheet
+        sheet = Stock::Stocktaking.sheet(category_id: int_param(:categoryId), warehouse_id: int_param(:warehouseId))
+        send_data sheet, filename: "inventaryzatsiia.xlsx", type: XLSX
+      end
+
+      # What the counted sheet (the raw request body, as in the reference) would change; writes nothing.
+      def stocktaking_preview
+        body = request.body.read(MAX_SHEET_BYTES + 1).to_s
+        raise DomainError, "Файл більший за #{MAX_SHEET_BYTES / 1024 / 1024} МБ." if body.bytesize > MAX_SHEET_BYTES
+
+        counts, errors = Tempfile.create(%w[stocktaking .xlsx], binmode: true) do |file|
+          file.write(body)
+          file.flush
+          Stock::Stocktaking.parse(file.path)
+        end
+        render json: preview_json(counts, errors)
+      end
+
+      def apply_stocktaking
+        p = params.permit(:comment, :warehouseId, counts: %i[itemId actual])
+        counts = Array(p[:counts]).map do |c|
+          Stock::Stocktaking::Count.new(item_id: integer_value(c[:itemId], "counts.itemId"),
+                                        actual: decimal_value(c[:actual], "counts.actual"))
+        end
+        result = Stock::ApplyStocktaking.call(counts:, comment: p[:comment], user: Current.user,
+                                              warehouse_id: optional_int(p[:warehouseId], "warehouseId"))
+        return render_failure(result) unless result.success?
+
+        render json: { counted: result.value.counted, changed: result.value.changed, value: result.value.value.to_f }
+      end
+
       private
+
+      def preview_json(counts, errors)
+        items = StockItem.active.where(item_id: counts.map(&:item_id)).index_by(&:id)
+        booked = Stock::Stocktaking.booked(items.values, int_param(:warehouseId))
+        lines = counts.filter_map do |count|
+          item = items[count.item_id]
+          next errors << "Позиції #{count.item_id} немає на складі." if item.nil?
+
+          Stock::Stocktaking::Line.new(item_id: item.id, name: item.name, unit: item.unit, booked: booked[item.id],
+                                       actual: count.actual)
+        end
+        { lines: lines.sort_by { |l| UkrainianSort.key(l.name) }.map do |l|
+          { itemId: l.item_id, name: l.name, unit: l.unit, booked: l.booked.to_f, actual: l.actual.to_f,
+            difference: l.difference.to_f }
+        end, errors: }
+      end
+
+      def optional_int(value, name) = value.nil? ? nil : integer_value(value, name)
 
       def require_reference(model, id, what)
         return if id.nil? || model.exists?(id)
