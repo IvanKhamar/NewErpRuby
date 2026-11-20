@@ -79,6 +79,23 @@ the link; everything else needs real accounts.
 
 **Check by hand:** LEARNING.md phase 5 has the two commands.
 
-## Next
+## Phase 6 — refund recipient check, the new module (done, 2026-11-20)
 
-Phase 6: the new refund recipient check (IBAN mod 97, name matching, audit log).
+- `POST /refunds/recipient-checks`, `GET /refunds/recipient-checks`, `POST /refunds`; tables from a migration.
+- IBAN: format, country length (UA 29, MFO code), mod 97 (ISO 13616); name: normalization (case, every apostrophe,
+  legal forms, word order), Ukrainian national transliteration, Levenshtein similarity → match / close_match /
+  no_match / account_not_found. Refund only after a match or a confirmed close match; not above the order total;
+  every check in the audit log.
+- Unit tests: every single-digit error and a swap of neighbours caught; Cyrillic, Latin, ' and ʼ forms of names.
+- Checks: 137 RSpec examples, RuboCop, Brakeman, bundler-audit, importmap audit, gitleaks: all green.
+
+**Check by hand:** with seeded data, `POST /refunds/recipient-checks` with `UA22 3052 9900 0002 6001 2345 6789 0`
+and "Олена Коваленко" gives `close_match` (the register has the patronymic).
+
+**Read in LEARNING.md:** phase 6.
+
+## What is left
+
+- The gaps listed in PLAN.md (catalog, marketing, customers, cashbox shifts, purchase orders, sewing plan and more).
+- The refund check uses a local register of accounts; a real bank's verification API would replace
+  `RefundKnownAccount` lookups behind the same service.
