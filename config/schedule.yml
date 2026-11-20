@@ -1,0 +1,15 @@
+# Recurring jobs (sidekiq-cron), the Celery beat schedule of the reference. Cron times are Kyiv time.
+settle_pre_orders:
+  cron: "0 * * * * Europe/Kyiv"
+  class: SettlePreOrdersJob
+  description: "Hourly: take what the storefront sold ahead off the pre-order limits"
+
+check_competitor_prices:
+  cron: "0 7 * * * Europe/Kyiv"
+  class: CheckCompetitorPricesJob
+  description: "Daily at 07:00, before managers start work: read competitor prices"
+
+refresh_delivery_tracking:
+  cron: "30 * * * * Europe/Kyiv"
+  class: RefreshDeliveryTrackingJob
+  description: "Hourly: refresh the statuses of open Nova Poshta waybills"

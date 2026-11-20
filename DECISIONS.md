@@ -107,3 +107,17 @@ Decisions made while the user was away. Each: what, why, and the options conside
   (OpenCart's) are emptied (`spec/support/myisam_cleanup.rb`). The concurrency test runs without a transaction
   and removes its own rows.
 - **Why:** MyISAM ignores transactions, so rows written by a test would leak into the next one.
+
+## D14. Phase 2 choices
+
+- **Schedule:** pre-orders hourly, competitor prices daily at 07:00, tracking hourly at :30, all in Kyiv time
+  (`config/schedule.yml`). The reference makes the pre-order interval and the check time settings; here they are
+  fixed in the YAML file, which is the usual sidekiq-cron way.
+- **Tracking client:** the hourly refresh uses the domestic Nova Poshta API (as the reference does); Nova Post
+  International comes in phase 3. Without `NEWERP_NOVA_POSHTA_API_KEY` the stub answers "not configured".
+- **Page fetcher on Net::HTTP, not Faraday:** it must connect to the IP address it checked (`Net::HTTP#ipaddr`) to
+  stop DNS rebinding; Faraday's adapters do not expose that. The outside-service clients use Faraday.
+- **ReDoS test:** Ruby 3.2+ memoizes regex matching, so the classic `(a+)+$` no longer hangs; the test uses a pattern
+  with a backreference, which turns memoization off, to prove the timeout really fires.
+- **Lesson:** `rubocop -A` rewrote `!ip_range.include?(ip)` into `ip_range.exclude?(ip)`, which IPAddr does not have.
+  The tests caught it; those two lines now carry an inline exemption with the reason.

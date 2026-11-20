@@ -168,3 +168,84 @@ Gem **Bullet** у тестах падає при N+1 (і при зайвому `
    → [Orders::ChangeStatus](app/services/orders/change_status.rb) → [SewnStock](app/services/orders/status_handlers/sewn_stock.rb).
 2. [Stock::Adjust](app/services/stock/adjust.rb) і тест з потоками [adjust_call_spec.rb](spec/services/stock/adjust_call_spec.rb).
 3. [Authentication](app/controllers/concerns/authentication.rb) і [PasswordHasher](lib/password_hasher.rb).
+
+---
+
+## Фаза 2. Задачі за розкладом
+
+### ActiveJob і Sidekiq
+
+ActiveJob — спільний інтерфейс фонових задач у Rails (`perform_later`, `retry_on`, `queue_as`); Sidekiq — один із
+«бекендів», який зберігає задачі в Redis і виконує їх в окремому процесі (сервіс `sidekiq` у
+[docker-compose.yml](docker-compose.yml)). Адаптер задано в [config/application.rb](config/application.rb):
+`config.active_job.queue_adapter = :sidekiq`; у тестах — `:test` ([config/environments/test.rb](config/environments/test.rb)).
+Задачі тонкі: [SettlePreOrdersJob](app/jobs/settle_pre_orders_job.rb) лише викликає сервіс і пише в лог.
+[RefreshDeliveryTrackingJob](app/jobs/refresh_delivery_tracking_job.rb) повторюється при збої сервісу:
+`retry_on NovaPoshta::Client::Error, wait: :polynomially_longer, attempts: 5`.
+
+**Питання:**
+- *Чому задача має бути тонкою та ідемпотентною?* — Sidekiq гарантує «принаймні один раз»: задачу можуть виконати
+  двічі (рестарт процесу, повтор після помилки). Логіка в сервісі, який можна безпечно повторити (наш settle —
+  compare-and-set, тож повтор нічого не зіпсує).
+- *Що передавати в аргументах задачі?* — прості значення (id), не ActiveRecord-об'єкти: задача може виконатися
+  пізніше, коли запис уже змінився (ActiveJob уміє GlobalID, але id надійніший і явний).
+- *`perform_now` vs `perform_later`?* — `perform_now` виконує одразу в поточному процесі (зручно в тестах),
+  `perform_later` кладе в чергу.
+
+### Розклад: sidekiq-cron
+
+[config/schedule.yml](config/schedule.yml) описує cron-рядки з часовим поясом (`0 7 * * * Europe/Kyiv`),
+[config/initializers/sidekiq.rb](config/initializers/sidekiq.rb) завантажує їх при старті Sidekiq. Це аналог
+Celery beat в еталоні.
+
+**Питання:**
+- *Що буде, якщо запущено три процеси Sidekiq — задача виконається тричі?* — ні, sidekiq-cron ставить задачу в
+  чергу один раз (блокування в Redis), а виконає її один із процесів.
+
+### Транзакції на MyISAM: compare-and-set
+
+Таблиця розмірів `dd_product_option_value` — MyISAM: транзакцій і блокувань рядків немає. Тому
+[PreOrders::Settle](app/services/pre_orders/settle.rb) оновлює кожен розмір одним `UPDATE … WHERE quantity = старе
+AND pre_order_quantity = старе`. Якщо вітрина встигла продати ще, рядок не зміниться і буде врахований наступного
+разу. `update_all` повертає кількість змінених рядків — так рахуємо результат.
+
+**Питання:**
+- *Як уникнути lost update без транзакцій?* — умовний UPDATE зі старими значеннями (compare-and-set) або
+  колонка версії (оптимістичне блокування); перевіряти кількість змінених рядків.
+
+### Regexp з таймаутом (захист від ReDoS)
+
+Вираз для ціни пише людина, а сторінку — чужий сайт. «Поганий» вираз може шукати збіг роками (катастрофічний
+backtracking). Ruby 3.2+ має `Regexp.new(pattern, timeout: 2.0)`, який кидає `Regexp::TimeoutError`
+([PriceExtractor](app/services/competitors/price_extractor.rb)). Цікаво: Ruby 3.2 ще й мемоізує більшість виразів,
+тож класичний `(a+)+$` уже не зависає; зависають вирази зі зворотними посиланнями (`\1`) — саме такий у тесті
+[price_extractor_spec.rb](spec/services/competitors/price_extractor_spec.rb).
+
+**Питання:**
+- *Що таке ReDoS?* — відмова в обслуговуванні через регулярний вираз з експоненційним перебором; захист — таймаут,
+  обмеження довжини виразу й тексту, вирази без вкладених квантифікаторів.
+
+### SSRF
+
+Адресу сторінки конкурента вводить користувач, а запит робить сервер — значить, через неї можна було б звернутися
+до внутрішньої мережі (наприклад, до `169.254.169.254` — метаданих хмари). [PageFetcher](app/services/competitors/page_fetcher.rb)
+спершу резолвить DNS і пускає лише публічні адреси, з'єднується саме з перевіреною IP (`Net::HTTP#ipaddr`, захист від
+DNS rebinding), редиректи — тільки в межах сайту конкурента.
+
+**Питання:**
+- *Що таке SSRF і як від нього захиститися?* — Server-Side Request Forgery: сервер робить запит на адресу від
+  нападника. Захист: allowlist доменів/схем, заборона приватних і службових IP після резолву, без автоматичних
+  редиректів, таймаути й ліміт розміру відповіді.
+
+### HTTP-клієнти: Faraday
+
+[NovaPoshta::Client](app/clients/nova_poshta/client.rb): Faraday з middleware `:json` (тіло запиту/відповіді),
+`:retry` (повтори з експоненційною паузою для 429/5xx) і таймаутами. Без ключа — `Stub`, тож локально нічого не йде
+в реальний сервіс. У тестах WebMock (`stub_request`) підміняє HTTP, а `WebMock.disable_net_connect!` падає на будь-
+якому незаглушеному запиті.
+
+**Питання:**
+- *Навіщо таймаути на кожен зовнішній виклик?* — без них один повільний сервіс займає потоки Puma/Sidekiq і
+  «кладе» весь застосунок.
+- *Чи безпечно повторювати POST?* — лише якщо операція ідемпотентна (у нас tracking — читання), інакше потрібен
+  ключ ідемпотентності.

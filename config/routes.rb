@@ -39,6 +39,22 @@ Rails.application.routes.draw do
       put "components/:id/bom", action: :component_bom
       put "models/:id/sewn-bom", action: :sewn_bom
     end
+
+    scope "preorders", controller: :pre_orders do
+      get "", action: :index
+      post "settle"
+      put ":id", action: :update
+    end
+
+    scope "competitors", controller: :competitors do
+      get "", action: :index
+      post "", action: :create
+      get "links"
+      post "links", action: :add_link
+      post "check"
+    end
+
+    post "delivery/tracking/refresh", to: "delivery#refresh_tracking"
   end
 
   # Admin pages (HTML, Turbo) at /app, like the web interfaces of the other versions.
