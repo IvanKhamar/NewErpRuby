@@ -188,3 +188,9 @@ Decisions made while the user was away. Each: what, why, and the options conside
   development. One origin in both cases, so no CORS and the HttpOnly cookie stays out of JavaScript.
 - **MSW 3** renamed `onUnhandledRequest` to `onUnhandledFrame`; with the old name the option was silently ignored,
   which the type check caught (the tests alone did not).
+- **Dependabot and TypeScript 7:** Dependabot opened a bump to 7.0.2 (PR #8); `npm ci` failed because
+  typescript-eslint 8.73 accepts `<6.1`. Major TypeScript updates are ignored in `.github/dependabot.yml` until
+  typescript-eslint supports 7; minor and patch updates of 6.x still come.
+- **Brakeman must be the latest:** Rails' generated `bin/brakeman` adds `--ensure-latest`, so CI fails on the day a
+  new Brakeman comes out (8.1.1 on 2026-11-20, while PR #9 was open). Kept on purpose: a security scanner should be
+  current. The fix is `bundle update brakeman --conservative`; Dependabot's weekly gem update usually does it.
