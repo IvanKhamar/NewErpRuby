@@ -98,5 +98,8 @@ Rails.application.routes.draw do
     end
   end
 
+  # The React app (phase 7): client-side routes all get its index.html.
+  get "ui(/*path)", to: "ui#show", format: false
+
   root to: redirect("/app")
 end

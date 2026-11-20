@@ -1,0 +1,3 @@
+node_modules/
+# Generated from ../docs/openapi.json by `npm run api:types` (every dev, typecheck and build run does it).
+src/api/schema.d.ts

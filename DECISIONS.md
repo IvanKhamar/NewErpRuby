@@ -176,3 +176,15 @@ Decisions made while the user was away. Each: what, why, and the options conside
   data, which this portfolio project does not have.
 - **Privacy:** the holder's name is returned only for a close match (as a hint to fix a typo), never for no match.
 - **Invalid IBAN:** answered with 400 and the reason, and still written to the audit log as `invalid_iban`.
+
+## D19. Phase 7: React + TypeScript
+
+- **Same repository** (`frontend/`), so one PR shows the API and the UI using it.
+- **TypeScript 6.0, not 7:** typescript-eslint 8.73 supports `<6.1`. openapi-typescript declares `^5` as its peer;
+  an npm `overrides` entry lets it use the project's TypeScript (it only parses the JSON and prints types).
+- **Generated types are not committed:** every `dev`, `typecheck` and `build` regenerates them from
+  `docs/openapi.json`, so they cannot go stale.
+- **Serving:** Rails serves the build from `public/ui` (not committed); the compose service `ui` runs Vite for
+  development. One origin in both cases, so no CORS and the HttpOnly cookie stays out of JavaScript.
+- **MSW 3** renamed `onUnhandledRequest` to `onUnhandledFrame`; with the old name the option was silently ignored,
+  which the type check caught (the tests alone did not).
