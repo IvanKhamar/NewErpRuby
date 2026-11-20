@@ -22,7 +22,9 @@ Decisions made while the user was away. Each: what, why, and the options conside
 ## D3. Full Rails app, generated in Docker; no native Ruby on Windows
 
 - **What:** `rails new` ran inside `ruby:4.0.10`; every command runs through `docker compose run --rm app …`.
-- **Why:** the machine has no Ruby and no usable WSL distribution; Docker is installed and running.
+- **Why:** the machine has no Ruby (WSL Ubuntu exists but has no Ruby either); Docker is installed and running, and
+  the same image then serves development, tests and the compose setup. Installing Ruby into WSL was the option
+  not taken: one more environment to keep in sync.
 - **Skipped generators:** Solid Queue/Cache/Cable (Sidekiq and Redis are the brief's choice), Kamal, Thruster,
   Active Storage, Action Text, Mailbox, Mailer, Cable, Rails' production Dockerfile, Rails' own CI and RuboCop
   omakase (replaced by own CI and a RuboCop config with the rails, rspec and performance plugins).

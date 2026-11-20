@@ -1,0 +1,20 @@
+# Development and test image: the app code is mounted from the host (docker-compose.yml), gems live in the image.
+# On Windows this is how Ruby runs at all: no native Ruby is needed on the machine.
+FROM ruby:4.0.10
+
+# mysql client: bin/rails writes db/structure.sql with mysqldump and loads it with mysql. Debian ships the MariaDB
+# client, which rejects the self-signed certificate of the local MySQL container; the dev config skips that check.
+RUN apt-get update -qq \
+ && apt-get install -y --no-install-recommends default-mysql-client \
+ && rm -rf /var/lib/apt/lists/* \
+ && printf '[client]\nskip-ssl-verify-server-cert\n' > /etc/mysql/conf.d/dev-client.cnf
+
+WORKDIR /app
+ENV BUNDLE_PATH=/usr/local/bundle \
+    BUNDLE_JOBS=4
+
+COPY .ruby-version Gemfile Gemfile.lock ./
+RUN bundle install
+
+EXPOSE 3000
+CMD ["bin/rails", "server", "-b", "0.0.0.0"]

@@ -1,0 +1,82 @@
+# One command for everything: `docker compose up`. The app runs on http://localhost:3000
+# (admin pages at /app, JSON API at the root paths of docs/openapi.json).
+# Host ports differ from the other versions (Python: 3307, 6379, 9092; .NET tests: 3317, 6389), so all can run at
+# once. Redis is not published: only the app and Sidekiq inside compose use it.
+x-app: &app
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+  volumes:
+    - .:/app
+  environment: &app-env
+    NEWERP_DB_HOST: mysql
+    NEWERP_DB_PORT: 3306
+    NEWERP_DB_NAME: ${NEWERP_DB_NAME:-newerp_ruby_dev}
+    NEWERP_DB_USER: ${NEWERP_DB_USER:-newerp}
+    NEWERP_DB_PASSWORD: ${NEWERP_DB_PASSWORD:-newerp_dev_password}
+    REDIS_URL: redis://redis:6379/0
+    NEWERP_KAFKA_BROKERS: ${NEWERP_KAFKA_BROKERS:-}
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  app:
+    <<: *app
+    command: bash -c "rm -f tmp/pids/server.pid && bin/rails db:prepare && bin/rails server -b 0.0.0.0"
+    ports:
+      - "3000:3000"
+
+  sidekiq:
+    <<: *app
+    command: bundle exec sidekiq
+
+  mysql:
+    image: mysql:8.0
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_USER: ${NEWERP_DB_USER:-newerp}
+      MYSQL_PASSWORD: ${NEWERP_DB_PASSWORD:-newerp_dev_password}
+      MYSQL_ROOT_PASSWORD: ${NEWERP_DB_ROOT_PASSWORD:-root_dev_password}
+    ports:
+      - "3327:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db/docker/grant.sql:/docker-entrypoint-initdb.d/1-grant.sql:ro
+    healthcheck:
+      # TCP, not the socket: during the first start the init scripts run on a socket-only temporary server.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 5s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 20
+
+  # Kafka only on demand: `docker compose --profile kafka up`, with NEWERP_KAFKA_BROKERS=kafka:9092 in .env.
+  # One node in KRaft mode (no ZooKeeper).
+  kafka:
+    image: apache/kafka:3.9.1
+    profiles: ["kafka"]
+    ports:
+      - "9095:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      retries: 20
+
+volumes:
+  mysql-data:

@@ -1,0 +1,22 @@
+# Connection settings come from ENV (see .env.example); nothing secret is written here.
+default: &default
+  adapter: trilogy
+  encoding: utf8mb4
+  collation: utf8mb4_unicode_ci
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS", 5).to_i + 5 %>
+  host: <%= ENV.fetch("NEWERP_DB_HOST", "127.0.0.1") %>
+  port: <%= ENV.fetch("NEWERP_DB_PORT", 3327) %>
+  username: <%= ENV.fetch("NEWERP_DB_USER", "newerp") %>
+  password: <%= ENV.fetch("NEWERP_DB_PASSWORD", "") %>
+
+development:
+  <<: *default
+  database: <%= ENV.fetch("NEWERP_DB_NAME", "newerp_ruby_dev") %>
+
+test:
+  <<: *default
+  database: newerp_ruby_test<%= ENV["TEST_ENV_NUMBER"] %>
+
+production:
+  <<: *default
+  database: <%= ENV.fetch("NEWERP_DB_NAME", "newerp_ruby") %>

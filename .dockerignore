@@ -1,0 +1,9 @@
+# .env holds local secrets and must never get into an image.
+.env
+.env.*
+.git
+log/*
+tmp/*
+coverage
+.idea
+.vscode
