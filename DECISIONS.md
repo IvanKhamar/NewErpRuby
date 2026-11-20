@@ -161,3 +161,18 @@ Decisions made while the user was away. Each: what, why, and the options conside
   `OrderEvents.publisher` (`mattr_accessor`), with a spec on the default.
 - **Checked by hand:** with `docker compose --profile kafka`, a status change put
   `{"type":"OrderStatusChanged",...}` with key = order id into `newerp.orders`.
+
+## D18. Refund recipient check (the new module)
+
+- **Paths:** `POST /refunds/recipient-checks`, `GET /refunds/recipient-checks`, `POST /refunds`: the contract's style
+  (kebab-case, no `/api/v1`) instead of the brief's `/api/v1/refunds/recipient_checks` (D2). Not in
+  `docs/openapi.json`, so their specs check the JSON directly.
+- **Known accounts:** a local table `erp_refund_known_account` stands in for a bank's Confirmation of Payee service;
+  seeds put two invented holders on IBANs built with valid check digits.
+- **IBAN countries:** the lengths of 27 countries from the SWIFT registry (Ukraine and the usual neighbours and EU);
+  any other country is refused with a clear message rather than checked by format only.
+- **Matching:** same words in any order after normalization = match; every word at least 80 % similar (Levenshtein)
+  and at least first and last name = close match; else no match. The threshold is a starting point to tune on real
+  data, which this portfolio project does not have.
+- **Privacy:** the holder's name is returned only for a close match (as a hint to fix a typo), never for no match.
+- **Invalid IBAN:** answered with 400 and the reason, and still written to the audit log as `invalid_iban`.

@@ -85,5 +85,11 @@ end
                        assigned_at: added)
 end
 
+# Refund recipient check: invented holders on IBANs built with valid check digits (no real account behind them).
+{ "3052990000026001234567890" => "Коваленко Олена Петрівна", "3220010000026202301234567" => "ФОП Мельник Андрій" }
+  .each do |bban, holder|
+    RefundKnownAccount.create!(iban: "UA#{Iban.check_digits('UA', bban)}#{bban}", holder_name: holder)
+  end
+
 puts "Seeded: #{User.count} users, #{Product.count} products, #{StockItem.count} consumables, " \
      "#{ProductionModel.count} models, #{Order.count} orders."

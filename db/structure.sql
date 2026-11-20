@@ -952,7 +952,7 @@ CREATE TABLE `dd_order` (
   `user_id` int NOT NULL DEFAULT '0',
   `date_shipping` date DEFAULT NULL,
   PRIMARY KEY (`order_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3;
+) ENGINE=MyISAM AUTO_INCREMENT=81 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_order_option`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -986,7 +986,7 @@ CREATE TABLE `dd_order_product` (
   `crosssell` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`order_product_id`),
   KEY `order_id` (`order_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3;
+) ENGINE=MyISAM AUTO_INCREMENT=81 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_order_source`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -996,7 +996,7 @@ CREATE TABLE `dd_order_source` (
   `language_id` int NOT NULL,
   `name` varchar(64) NOT NULL,
   PRIMARY KEY (`order_source_id`,`language_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3;
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_order_status`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1007,7 +1007,7 @@ CREATE TABLE `dd_order_status` (
   `name` varchar(32) NOT NULL,
   `color` varchar(7) NOT NULL DEFAULT '',
   PRIMARY KEY (`order_status_id`,`language_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3;
+) ENGINE=MyISAM AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_order_status_log`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1021,7 +1021,7 @@ CREATE TABLE `dd_order_status_log` (
   `date_added` datetime NOT NULL,
   PRIMARY KEY (`order_status_log_id`),
   KEY `order_id` (`order_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3;
+) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_order_total`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1223,7 +1223,7 @@ CREATE TABLE `dd_product` (
   `date_added` datetime NOT NULL,
   `date_modified` datetime NOT NULL,
   PRIMARY KEY (`product_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3;
+) ENGINE=MyISAM AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_product_attribute`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1347,7 +1347,7 @@ CREATE TABLE `dd_product_option_value` (
   `pre_order_quantity` int NOT NULL DEFAULT '0',
   `date_available` date DEFAULT NULL,
   PRIMARY KEY (`product_option_value_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3;
+) ENGINE=MyISAM AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_product_order_snapshot`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1667,7 +1667,7 @@ CREATE TABLE `dd_stock_categories` (
   `sort_order` int NOT NULL DEFAULT '0',
   `date_added` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`category_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_stock_items`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1691,7 +1691,7 @@ CREATE TABLE `dd_stock_items` (
   KEY `idx_stock_alert` (`stock`,`min_stock`),
   CONSTRAINT `fk_stock_item_category` FOREIGN KEY (`category_id`) REFERENCES `dd_stock_categories` (`category_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_stock_item_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `dd_stock_suppliers` (`supplier_id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_stock_log`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1726,7 +1726,7 @@ CREATE TABLE `dd_stock_production` (
   `sort_order` int NOT NULL DEFAULT '0',
   `status` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`production_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_stock_production_categories`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1750,7 +1750,7 @@ CREATE TABLE `dd_stock_production_component_bom` (
   `qty_per_unit` decimal(12,4) NOT NULL,
   PRIMARY KEY (`bom_id`),
   KEY `component_id` (`component_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_stock_production_component_stock`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1772,7 +1772,7 @@ CREATE TABLE `dd_stock_production_components` (
   `sort_order` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`component_id`),
   KEY `production_id` (`production_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_stock_production_log`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1817,7 +1817,7 @@ CREATE TABLE `dd_stock_production_sewn_bom` (
   `qty_per_unit` decimal(12,4) NOT NULL,
   PRIMARY KEY (`bom_id`),
   KEY `production_id` (`production_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_stock_production_sizes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1833,7 +1833,7 @@ CREATE TABLE `dd_stock_production_sizes` (
   `oc_option_value_id` int DEFAULT NULL,
   PRIMARY KEY (`size_id`),
   KEY `production_id` (`production_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_stock_status`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1900,7 +1900,7 @@ CREATE TABLE `dd_user` (
   `status` tinyint(1) NOT NULL,
   `date_added` datetime NOT NULL,
   PRIMARY KEY (`user_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3;
+) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dd_user_group`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2096,6 +2096,55 @@ CREATE TABLE `erp_purchase_order_line` (
   CONSTRAINT `fk_erp_purchase_order_line_order` FOREIGN KEY (`order_id`) REFERENCES `erp_purchase_order` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `erp_refund`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `erp_refund` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `order_id` int NOT NULL,
+  `recipient_check_id` bigint NOT NULL,
+  `iban` varchar(34) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `recipient_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `amount` decimal(15,2) NOT NULL,
+  `confirmed_close_match` tinyint(1) NOT NULL DEFAULT '0',
+  `user_id` int NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_erp_refund_on_recipient_check_id` (`recipient_check_id`),
+  KEY `index_erp_refund_on_order_id` (`order_id`),
+  CONSTRAINT `fk_rails_6c815c0ff3` FOREIGN KEY (`recipient_check_id`) REFERENCES `erp_refund_recipient_check` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `erp_refund_known_account`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `erp_refund_known_account` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `iban` varchar(34) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `holder_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_erp_refund_known_account_on_iban` (`iban`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `erp_refund_recipient_check`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `erp_refund_recipient_check` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `order_id` int DEFAULT NULL,
+  `iban` varchar(34) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `entered_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `result` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `suggested_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `score` decimal(4,3) DEFAULT NULL,
+  `user_id` int NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_erp_refund_recipient_check_on_order_id` (`order_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `erp_shipment_sender`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
@@ -2169,5 +2218,6 @@ CREATE TABLE `schema_migrations` (
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20261120000002'),
 ('20261120000001');
 

@@ -27,8 +27,6 @@ Style/Documentation:
 Style/FrozenStringLiteralComment:
   Enabled: false
 
-Metrics/MethodLength:
-  Max: 25
 Metrics/AbcSize:
   Max: 70
 Metrics/ClassLength:
@@ -79,3 +77,9 @@ Naming/VariableNumber:
 Rails/Output:
   Exclude:
     - db/seeds.rb
+
+# A migration lists its columns in one change method; splitting it would only hide the schema.
+Metrics/MethodLength:
+  Max: 25
+  Exclude:
+    - db/migrate/**/*

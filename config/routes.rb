@@ -35,6 +35,11 @@ Rails.application.routes.draw do
       post "stocktaking", action: :apply_stocktaking
     end
 
+    # New module (not in the reference contract): refunds with a recipient check.
+    post "refunds/recipient-checks", to: "refunds#check_recipient"
+    get "refunds/recipient-checks", to: "refunds#checks"
+    post "refunds", to: "refunds#create"
+
     get "reports/sales", to: "reports#sales"
     get "catalog/faq", to: "faq#index"
     post "catalog/faq", to: "faq#create"

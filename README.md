@@ -22,9 +22,9 @@ Built with Claude Code as an AI pair programmer; I reviewed and tested the chang
 | 3 | Clients: Nova Post International, LiqPay, PrivatBank, Checkbox, SMSClub (one flow each, WebMock tests) | done |
 | 4 | Sales report, Excel stocktaking (caxlsx + roo), partner XML feed (Builder), HTML sanitizing (FAQ) | done |
 | 5 | Order events to Kafka (WaterDrop), Kafka in a compose profile | done |
-| 6 | **New module:** refund recipient check (IBAN mod 97 + name matching) | planned |
+| 6 | **New module:** refund recipient check (IBAN mod 97 + name matching, audit log) | done |
 
-Tests: 115 examples (the number `bundle exec rspec` prints). The ported endpoints and what is left out are listed in
+Tests: 137 examples (the number `bundle exec rspec` prints). The ported endpoints and what is left out are listed in
 [PLAN.md](PLAN.md); decisions made on the way are in [DECISIONS.md](DECISIONS.md).
 
 ## Stack
@@ -89,3 +89,24 @@ spec/            requests (with contract checks), services, models
 
 The database is shared by design: the old site's tables are read and written as they are (MyISAM for OpenCart
 tables, InnoDB for stock and production), and times are Kyiv wall-clock time without a zone, like in every version.
+
+## New module: refund recipient check
+
+Not in the other versions; built here first (phase 6). Before money goes back to a customer's IBAN, the account and
+the name are checked, like the UK's Confirmation of Payee:
+
+1. `POST /refunds/recipient-checks` `{ "iban": "UA21 3223 …", "name": "Олена Коваленко", "orderId": 42 }`
+   - the IBAN is checked: format, the length of its country (29 for UA, the bank's MFO code inside), and the
+     ISO 13616 mod 97 check digits ([app/models/iban.rb](app/models/iban.rb));
+   - the name is compared with the holder from a local register of known accounts (`erp_refund_known_account`,
+     standing in for a bank's service): case, apostrophes (' ʼ ’), word order, Cyrillic or Latin spelling
+     (the Ukrainian national transliteration) do not matter, a typo or a missing patronymic gives a close match
+     ([app/models/payee_name.rb](app/models/payee_name.rb));
+   - the answer is `match`, `close_match` (with the holder's name as a hint), `no_match` or `account_not_found`;
+     an invalid IBAN gets a 400 with the reason.
+2. `POST /refunds` `{ "orderId": 42, "recipientCheckId": 7, "amount": 500, "confirmCloseMatch": false }` creates the
+   refund only after a match, or a close match the operator explicitly confirmed; never more than the order total.
+3. Every check, a failed one too, is in the audit log: `GET /refunds/recipient-checks?orderId=42`.
+
+Roles: Admin and Manager. The paths follow the contract's style (`/refunds/recipient-checks`, kebab-case, no
+`/api/v1`), see DECISIONS.md D2. Own tables come from a migration (`db/migrate`).
