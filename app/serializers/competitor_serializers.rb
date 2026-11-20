@@ -13,8 +13,8 @@ module CompetitorSerializers
     attributes :product_id
     attribute(:product_name) { |l| l.product&.name.to_s }
     attributes :url
-    attribute(:last_price) { |l| number(l.last_price) }
-    attribute(:last_checked_at) { |l| local_time(l.last_checked_at) }
+    attribute(:last_price) { |l| json_number(l.last_price) }
+    attribute(:last_checked_at) { |l| json_time(l.last_checked_at) }
     attribute(:last_error) { |l| l.last_error.to_s }
   end
 

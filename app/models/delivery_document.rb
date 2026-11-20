@@ -14,6 +14,18 @@ class DeliveryDocument < ApplicationRecord
     where.not(number: "").where.not(status_code: FINAL_STATUS_CODES).where.not(carrier: INTERNATIONAL)
   }
 
+  def final? = FINAL_STATUS_CODES.include?(status_code)
+
+  # How the status is coloured in the list, as the old site did; a number in JSON: 0 info, 1 success, 2 warning,
+  # 3 error. Received counts as success, but with cash on delivery only when the money came back (code 11).
+  def tone
+    return 1 if (status_code == 9 && !redelivery) || (status_code == 11 && redelivery) || status_code == 106
+    return 3 if [3, 107].include?(status_code)
+    return 2 if [102, 103, 105, 108].include?(status_code)
+
+    0
+  end
+
   # Like the old site, the record changes only when the status code changed. Returns self if it changed, else nil.
   def apply_tracking(info)
     return nil if info.status_code == status_code

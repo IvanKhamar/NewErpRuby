@@ -2,10 +2,10 @@
 module OrderSerializers
   class ListItem < ApplicationSerializer
     attribute(:id, &:order_id)
-    attribute(:date_added) { |o| local_time(o.date_added) }
+    attribute(:date_added) { |o| json_time(o.date_added) }
     attribute(:customer, &:customer_name)
     attributes :telephone
-    attribute(:total) { |o| number(o.total) }
+    attribute(:total) { |o| json_number(o.total) }
     attributes :currency_code
     attribute(:status_id, &:order_status_id)
     attribute(:status_name) { |o| o.status&.name }
@@ -16,12 +16,12 @@ module OrderSerializers
 
   class ProductLine < ApplicationSerializer
     attributes :product_id, :name, :model, :quantity
-    attribute(:price) { |p| number(p.price) }
-    attribute(:total) { |p| number(p.total) }
+    attribute(:price) { |p| json_number(p.price) }
+    attribute(:total) { |p| json_number(p.total) }
   end
 
   class StatusHistoryEntry < ApplicationSerializer
-    attribute(:changed_at) { |log| local_time(log.date_added) }
+    attribute(:changed_at) { |log| json_time(log.date_added) }
     attributes :old_status_id, :new_status_id
     attribute(:new_status_name) { |log| log.new_status&.name }
     attributes :user_id
@@ -30,12 +30,12 @@ module OrderSerializers
 
   class Details < ApplicationSerializer
     attribute(:id, &:order_id)
-    attribute(:date_added) { |o| local_time(o.date_added) }
+    attribute(:date_added) { |o| json_time(o.date_added) }
     attribute(:customer, &:customer_name)
     attributes :telephone, :email, :shipping_method, :shipping_city
     attribute(:shipping_address, &:shipping_address)
     attributes :payment_method, :comment
-    attribute(:total) { |o| number(o.total) }
+    attribute(:total) { |o| json_number(o.total) }
     attributes :currency_code
     attribute(:status_id, &:order_status_id)
     attribute(:status_name) { |o| o.status&.name }
@@ -58,7 +58,7 @@ module OrderSerializers
     attributes :level, :total_orders
     attribute(:cancelled_orders) { |r| r.cancelled_order_ids.size }
     attributes :cancelled_order_ids
-    attribute(:suspicion_rate) { |r| number(r.suspicion_rate) }
+    attribute(:suspicion_rate) { |r| json_number(r.suspicion_rate) }
     attributes :message
     attribute(:shared_ip) { nil }
   end
@@ -70,7 +70,7 @@ module OrderSerializers
 
   class Credits < ApplicationSerializer
     attributes :order_id, :customer_id, :reward_points, :reward_added, :affiliate_id
-    attribute(:commission) { |c| number(c.commission) }
+    attribute(:commission) { |c| json_number(c.commission) }
     attributes :commission_added
   end
 end

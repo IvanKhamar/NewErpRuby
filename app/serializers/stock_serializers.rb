@@ -6,23 +6,23 @@ module StockSerializers
     attribute(:category_name) { |i| i.category&.name }
     attributes :supplier_id
     attribute(:supplier_name) { |i| i.supplier&.name }
-    attribute(:quantity) { |i| number(i.stock) }
-    attribute(:min_quantity) { |i| number(i.min_stock) }
+    attribute(:quantity) { |i| json_number(i.stock) }
+    attribute(:min_quantity) { |i| json_number(i.min_stock) }
     attribute(:is_below_minimum, &:below_minimum?)
     attribute(:used_for) { |i| i.used_for.to_s }
-    attribute(:price) { |i| number(i.price) }
+    attribute(:price) { |i| json_number(i.price) }
   end
 
   class Movement < ApplicationSerializer
     attribute(:id, &:log_id)
     attributes :item_id
-    attribute(:delta) { |m| number(m.delta) }
-    attribute(:quantity_before) { |m| number(m.stock_before) }
-    attribute(:quantity_after) { |m| number(m.stock_after) }
+    attribute(:delta) { |m| json_number(m.delta) }
+    attribute(:quantity_before) { |m| json_number(m.stock_before) }
+    attribute(:quantity_after) { |m| json_number(m.stock_after) }
     attribute(:reason) { |m| m.comment.to_s }
     attribute(:user_id) { |m| m.user_id.to_i }
     attributes :username
-    attribute(:created_at) { |m| local_time(m.date_added) }
+    attribute(:created_at) { |m| json_time(m.date_added) }
   end
 
   class Category < ApplicationSerializer

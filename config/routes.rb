@@ -55,6 +55,17 @@ Rails.application.routes.draw do
     end
 
     post "delivery/tracking/refresh", to: "delivery#refresh_tracking"
+
+    scope "orders/:id", constraints: { id: /\d+/ } do
+      post "liqpay-link", to: "payments#liqpay_link"
+      get "liqpay-status", to: "payments#liqpay_status"
+      get "sms", to: "order_integrations#sms_history"
+      post "sms", to: "order_integrations#send_sms"
+      post "shipment/international", to: "order_integrations#international_shipment"
+    end
+    get "payments/bank", to: "payments#bank"
+    post "payments/bank/import", to: "payments#import_bank"
+    post "cashbox/cheques/:id/fiscalize", to: "cashbox#fiscalize"
   end
 
   # Admin pages (HTML, Turbo) at /app, like the web interfaces of the other versions.

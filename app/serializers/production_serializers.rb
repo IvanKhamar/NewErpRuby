@@ -3,17 +3,17 @@ module ProductionSerializers
   class Summary < ApplicationSerializer
     attribute(:id, &:production_id)
     attributes :name, :type, :min_total
-    attribute(:total_cut) { |m| number(m.total_cut) }
-    attribute(:total_sewn) { |m| number(m.total_sewn) }
-    attribute(:deficit) { |m| number([m.min_total - m.total_sewn, 0].max) }
+    attribute(:total_cut) { |m| json_number(m.total_cut) }
+    attribute(:total_sewn) { |m| json_number(m.total_sewn) }
+    attribute(:deficit) { |m| json_number([m.min_total - m.total_sewn, 0].max) }
   end
 
   class Size < ApplicationSerializer
     attribute(:id, &:size_id)
     attribute(:name, &:size_name)
-    attribute(:percent) { |s| number(s.percent) }
-    attribute(:cut_stock) { |s| number(s.cut_stock) }
-    attribute(:sewn_stock) { |s| number(s.sewn_stock) }
+    attribute(:percent) { |s| json_number(s.percent) }
+    attribute(:cut_stock) { |s| json_number(s.cut_stock) }
+    attribute(:sewn_stock) { |s| json_number(s.sewn_stock) }
     attribute(:option_value_id, &:oc_option_value_id)
   end
 
@@ -27,14 +27,14 @@ module ProductionSerializers
     attributes :size_id, :item_id
     attribute(:item_name) { |l| l.item&.name }
     attribute(:unit) { |l| l.item&.unit }
-    attribute(:qty_per_unit) { |l| number(l.qty_per_unit) }
+    attribute(:qty_per_unit) { |l| json_number(l.qty_per_unit) }
   end
 
   class Component < ApplicationSerializer
     attribute(:id, &:component_id)
     attributes :name, :sort_order
     # Cut parts in stock by size id ({"12": 4.0}).
-    attribute(:stock) { |c| c.stocks.to_h { |s| [s.size_id.to_s, number(s.stock)] } }
+    attribute(:stock) { |c| c.stocks.to_h { |s| [s.size_id.to_s, json_number(s.stock)] } }
     many :bom_lines, key: :bom, resource: ComponentBomLine
   end
 
@@ -44,7 +44,7 @@ module ProductionSerializers
     attributes :item_id
     attribute(:item_name) { |l| l.item&.name }
     attribute(:unit) { |l| l.item&.unit }
-    attribute(:qty_per_unit) { |l| number(l.qty_per_unit) }
+    attribute(:qty_per_unit) { |l| json_number(l.qty_per_unit) }
   end
 
   class Model < ApplicationSerializer
@@ -59,8 +59,8 @@ module ProductionSerializers
 
   class SizeChange < ApplicationSerializer
     attributes :size_id, :size_name
-    attribute(:before) { |c| number(c.before) }
-    attribute(:after) { |c| number(c.after) }
+    attribute(:before) { |c| json_number(c.before) }
+    attribute(:after) { |c| json_number(c.after) }
   end
 
   class OperationResult < ApplicationSerializer
