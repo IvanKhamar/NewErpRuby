@@ -148,3 +148,16 @@ Decisions made while the user was away. Each: what, why, and the options conside
   that was wrong and is fixed). Shop name, company and store URL come from ENV (`NEWERP_FEED_SHOP_NAME`,
   `NEWERP_FEED_COMPANY`, `NEWERP_STORE_URL`).
 - **Sales report:** `group` accepts the names (Day, Week, Month, Year) and their numbers, like the reference.
+
+## D17. Order events: after commit, no outbox
+
+- **What:** events are published in `ActiveRecord.after_all_transactions_commit`; a Kafka failure at that moment is
+  logged and the event is lost (the order stays).
+- **Why not a transactional outbox:** the order tables are MyISAM, so an outbox row could not be written atomically
+  with the order anyway; the reference makes the same choice and says so. Producer settings `acks: -1` and
+  idempotence keep the broker side safe; `eventId` lets consumers skip repeats.
+- **Lesson:** the publisher was first kept in `config.x`, which returns an empty `OrderedOptions` for an unset key,
+  so no publisher was ever set and events went nowhere. Only the real round trip through Kafka showed it. Now it is
+  `OrderEvents.publisher` (`mattr_accessor`), with a spec on the default.
+- **Checked by hand:** with `docker compose --profile kafka`, a status change put
+  `{"type":"OrderStatusChanged",...}` with key = order id into `newerp.orders`.

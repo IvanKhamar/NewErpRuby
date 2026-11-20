@@ -6,6 +6,9 @@
 module OrderEvents
   TOPIC = "newerp.orders".freeze
 
+  # Set in config/initializers/order_events.rb: Kafka when brokers are set, else the log.
+  mattr_accessor :publisher
+
   module_function
 
   def created(order_id:, status_id:, manager_id:, source_id:, total:, occurred_at:)
@@ -30,9 +33,6 @@ module OrderEvents
   def publish(order_id, payload)
     ActiveRecord.after_all_transactions_commit { publisher.publish(TOPIC, order_id.to_s, payload) }
   end
-
-  # Chosen in config/initializers/order_events.rb: Kafka when brokers are set, else the log.
-  def publisher = Rails.configuration.x.order_events_publisher
 
   # Without Kafka the events only go to the log, so local work needs no broker.
   class LogPublisher
