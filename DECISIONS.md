@@ -137,3 +137,14 @@ Decisions made while the user was away. Each: what, why, and the options conside
   `dd_cashbox_user` are never read (`ignored_columns`), as in the reference.
 - **Retries:** only for requests safe to repeat (GET, Nova Poshta tracking). A sale, a waybill and an SMS are never
   retried automatically: a repeat would make a duplicate.
+
+## D16. Phase 4 choices
+
+- **Sanitizing:** the reference cleans editor HTML in catalog content (pages, FAQ, descriptions). The FAQ
+  (`/catalog/faq`) was ported as the place where it really happens. `SafeListSanitizer` keeps a `<script>`'s text,
+  nh3 drops it; `HtmlContent` removes such elements with their content first, so both behave alike.
+- **Stocktaking preview** reads the raw request body (an .xlsx), exactly as the reference does, not a multipart form.
+- **Partner feed:** anonymous by partner code, as in the reference (an earlier line of PLAN.md said "with a token";
+  that was wrong and is fixed). Shop name, company and store URL come from ENV (`NEWERP_FEED_SHOP_NAME`,
+  `NEWERP_FEED_COMPANY`, `NEWERP_STORE_URL`).
+- **Sales report:** `group` accepts the names (Day, Week, Month, Year) and their numbers, like the reference.

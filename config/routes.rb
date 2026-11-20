@@ -30,7 +30,17 @@ Rails.application.routes.draw do
       get "items/:id", action: :show
       post "items/:id/adjustments", action: :adjust
       get "items/:id/movements", action: :movements
+      get "stocktaking/sheet.xlsx", action: :stocktaking_sheet, format: false
+      post "stocktaking/preview", action: :stocktaking_preview
+      post "stocktaking", action: :apply_stocktaking
     end
+
+    get "reports/sales", to: "reports#sales"
+    get "catalog/faq", to: "faq#index"
+    post "catalog/faq", to: "faq#create"
+    put "catalog/faq/:id", to: "faq#update"
+    # Anonymous on purpose: the partner's site downloads its feed by the partner code, as on the old site.
+    get "feeds/:code.xml", to: "feeds#partner", format: false, defaults: { format: :xml }
 
     scope "production", controller: :production do
       get "models"

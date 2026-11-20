@@ -73,8 +73,8 @@ validate every ported endpoint against it with `committee-rails`.
   `default_timezone :local`-style handling (see DECISIONS.md), never the machine clock in tests.
 - **Login**: failed tries are throttled (429 with `Retry-After`), an unknown login is hashed anyway so the answer
   takes as long as for a known one, the security stamp in the cookie is checked on every request.
-- **Every endpoint requires a role**; anonymous only on purpose (`/health`, the partner feed with a token compared in
-  constant time).
+- **Every endpoint requires a role**; anonymous only on purpose (`/health`, and the partner feed, which the partner's
+  site downloads by the partner code, as in the reference).
 - **SQL only through ActiveRecord or bound parameters.**
 - **Security headers and CSP** like `api/security.py`.
 - **Outside services**: without keys a stub answers; tests use WebMock only.

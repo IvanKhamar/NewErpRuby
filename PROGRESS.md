@@ -55,6 +55,19 @@ the link; everything else needs real accounts.
 
 **Read in LEARNING.md:** phase 3.
 
+## Phase 4 — reports, Excel, feeds, sanitizing (done, 2026-11-20)
+
+- `GET /reports/sales` (by day, week from Monday, month, year; cancelled orders left out).
+- Stocktaking: `GET /stock/stocktaking/sheet.xlsx` (caxlsx), `POST /stock/stocktaking/preview` (roo, raw .xlsx body,
+  errors per row), `POST /stock/stocktaking` (one transaction, rows locked, "Інвентаризація" in the log).
+- Partner feed `GET /feeds/{code}.xml` (Builder, markups, plain-text descriptions, EAN-13 barcodes).
+- HTML sanitizing on save for FAQ answers (`/catalog/faq`).
+- Checks: 110 RSpec examples, RuboCop, Brakeman, bundler-audit, importmap audit, gitleaks: all green.
+
+**Check by hand:** download the sheet as `sklad`, fill in "Фактично" in Excel, send it to the preview.
+
+**Read in LEARNING.md:** phase 4.
+
 ## Next
 
-Phase 4: sales report, Excel export and import of stock, partner XML feeds, HTML sanitizing.
+Phase 5: order events to Kafka with WaterDrop, Kafka in a compose profile.
