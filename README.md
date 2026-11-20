@@ -21,10 +21,10 @@ Built with Claude Code as an AI pair programmer; I reviewed and tested the chang
 | 2 | Sidekiq + cron: pre-orders, competitor prices with `Regexp.timeout` and an SSRF-safe fetcher, delivery tracking | done |
 | 3 | Clients: Nova Post International, LiqPay, PrivatBank, Checkbox, SMSClub (one flow each, WebMock tests) | done |
 | 4 | Sales report, Excel stocktaking (caxlsx + roo), partner XML feed (Builder), HTML sanitizing (FAQ) | done |
-| 5 | Order events to Kafka (WaterDrop) | planned |
+| 5 | Order events to Kafka (WaterDrop), Kafka in a compose profile | done |
 | 6 | **New module:** refund recipient check (IBAN mod 97 + name matching) | planned |
 
-Tests: 110 examples (the number `bundle exec rspec` prints). The ported endpoints and what is left out are listed in
+Tests: 115 examples (the number `bundle exec rspec` prints). The ported endpoints and what is left out are listed in
 [PLAN.md](PLAN.md); decisions made on the way are in [DECISIONS.md](DECISIONS.md).
 
 ## Stack
@@ -40,6 +40,7 @@ Everything runs in Docker; no Ruby is needed on the machine (this repo was built
 ```
 docker compose up                                  # MySQL, Redis, the app and Sidekiq; http://localhost:3000
 docker compose run --rm app bin/rails db:seed      # invented demo data (once, on an empty database)
+docker compose --profile kafka up                  # also Kafka; set NEWERP_KAFKA_BROKERS=kafka:9092 in .env
 ```
 
 Then open http://localhost:3000/app and log in as `admin`, `sklad` or `manager1` with the demo password `dev`

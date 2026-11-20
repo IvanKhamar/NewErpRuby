@@ -363,3 +363,48 @@ Alba викликає метод серіалізатора, якщо його �
 - *Що таке CSP і як вона допомагає?* — заголовок, що дозволяє браузеру виконувати скрипти лише з дозволених джерел
   ([content_security_policy.rb](config/initializers/content_security_policy.rb)); навіть якщо XSS пролізе, inline-скрипт
   без nonce не виконається.
+
+---
+
+## Фаза 5. Події замовлень у Kafka
+
+### Producer: WaterDrop
+
+[OrderEvents](app/services/order_events.rb) формує події `OrderCreated` і `OrderStatusChanged` (той самий JSON, що в
+еталоні), [KafkaPublisher](app/services/order_events/kafka_publisher.rb) пише їх у топік `newerp.orders` через
+WaterDrop. Ключ повідомлення — id замовлення: однакові ключі йдуть в один розділ (partition), тож події одного
+замовлення читаються в тому порядку, в якому записані. `acks: -1` і `enable.idempotence` — щоб подія не загубилась
+при збої брокера і не задублювалась при повторі всередині клієнта. Без `NEWERP_KAFKA_BROKERS` — `LogPublisher`
+([config/initializers/order_events.rb](config/initializers/order_events.rb)).
+
+Запуск з Kafka: `docker compose --profile kafka up` і `NEWERP_KAFKA_BROKERS=kafka:9092` у `.env`. Перевірити:
+`docker compose --profile kafka exec kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka:9092
+--topic newerp.orders --from-beginning --property print.key=true`.
+
+**Питання:**
+- *Навіщо ключ повідомлення?* — він визначає розділ; порядок гарантується лише в межах розділу, тож події однієї
+  сутності мають мати один ключ.
+- *At-least-once vs exactly-once?* — споживач може отримати подію двічі (повтор після збою), тому в подіях є `eventId`,
+  за яким споживач пропускає дублікат (ідемпотентний споживач).
+
+### Подія після коміту: `after_all_transactions_commit` vs outbox
+
+Подія йде лише після коміту транзакції (`ActiveRecord.after_all_transactions_commit`): ніхто не дізнається про
+зміну, яку відкотили (тест [order_events_spec.rb](spec/services/order_events_spec.rb) це перевіряє). Але якщо Kafka
+недоступна саме в момент після коміту — подія загубиться (лише запис у лог). Надійніше — **transactional outbox**:
+подію пишуть у таблицю тією ж транзакцією, а окрема задача відправляє її в Kafka. Тут outbox не допоміг би:
+таблиці замовлень — MyISAM, тож навіть рядок outbox не записався б атомарно з замовленням. Еталон зробив той самий
+вибір (DECISIONS.md D17).
+
+**Питання:**
+- *Чому не надсилати подію в `after_save` моделі?* — `after_save` виконується всередині транзакції: подія пішла б
+  до коміту, а транзакцію ще можуть відкотити. Потрібен `after_commit` або, як тут, `after_all_transactions_commit`.
+- *Що таке outbox pattern?* — запис події в таблицю `outbox` в одній транзакції з бізнес-даними + окремий процес, що
+  публікує її й позначає відправленою; гарантує «принаймні один раз» без розподілених транзакцій.
+
+### Урок: `config.x` повертає порожній об'єкт
+
+`Rails.configuration.x.something` для незаданого ключа повертає порожній `OrderedOptions`, а не `nil`. Через це
+ініціалізатор вважав, що publisher уже є, і події нікуди не йшли — тести цього не бачили, бо підміняли publisher.
+Знайшлося лише при справжній перевірці з Kafka. Тепер це звичайний атрибут модуля (`mattr_accessor :publisher`) і є
+тест на значення за замовчуванням. Висновок: хоча б один тест (або ручна перевірка) має йти без моків до кінця.

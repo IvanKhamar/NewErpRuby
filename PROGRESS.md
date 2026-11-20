@@ -68,6 +68,17 @@ the link; everything else needs real accounts.
 
 **Read in LEARNING.md:** phase 4.
 
+## Phase 5 — Kafka (done, 2026-11-20)
+
+- `OrderCreated` / `OrderStatusChanged` to topic `newerp.orders` (key = order id) with WaterDrop, after the commit;
+  without `NEWERP_KAFKA_BROKERS` the events go to the log. Kafka runs in the compose profile `kafka`.
+- Found and fixed on the way: the publisher was never set (`config.x` returns an empty object), which only the
+  real Kafka round trip showed (DECISIONS.md D17).
+- Checks: 115 RSpec examples, RuboCop, Brakeman, bundler-audit, importmap audit, gitleaks: all green; a real event
+  read back with kafka-console-consumer.
+
+**Check by hand:** LEARNING.md phase 5 has the two commands.
+
 ## Next
 
-Phase 5: order events to Kafka with WaterDrop, Kafka in a compose profile.
+Phase 6: the new refund recipient check (IBAN mod 97, name matching, audit log).
