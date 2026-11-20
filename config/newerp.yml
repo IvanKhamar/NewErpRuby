@@ -1,0 +1,10 @@
+# Business settings shared by the API, the admin pages and the jobs (NewErpPython config.py has the same values).
+shared:
+  # Language of the OpenCart lookups (dd_order_status etc.); the real database keeps every name with language_id 3.
+  language_id: 3
+  production:
+    # Statuses in which an order holds sewn pieces: entering one writes them off, leaving all of them returns them.
+    order_subtract_status_ids: [18, 20, 21, 22, 23, 25]
+  orders:
+    cancelled_status_id: 19
+    risk_lookback_years: 4

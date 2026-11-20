@@ -28,6 +28,8 @@ module NewErpRuby
 
     config.active_job.queue_adapter = :sidekiq
 
+    config.newerp = config_for(:newerp)
+
     config.generators do |g|
       g.test_framework :rspec
       g.helper false
