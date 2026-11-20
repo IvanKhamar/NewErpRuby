@@ -1,0 +1,170 @@
+# LEARNING.md — Rails на прикладі NewErpRuby
+
+Нотатки для себе: які концепції Rails використано в кожній фазі, де саме в коді, і що про це можуть спитати на
+співбесіді. Посилання ведуть на файли цього репозиторію.
+
+---
+
+## Фаза 1. Каркас і ядро
+
+### MVC і маршрутизація
+
+Rails — це MVC: **модель** (дані й правила, `app/models`), **контролер** (приймає запит, викликає логіку, віддає
+відповідь, `app/controllers`), **представлення** (HTML-шаблони ERB, `app/views`; для JSON у нас серіалізатори
+`app/serializers`). Маршрути описано в [config/routes.rb](config/routes.rb): `scope module: "api/v1"` кладе код у
+`Api::V1::…`, але шляхи лишаються як у контракті (`/orders`, а не `/api/v1/orders`). `namespace :admin, path: "app"`
+дає HTML-сторінки на `/app`. `resources :orders, only: %i[index show]` — REST-маршрути одним рядком.
+
+**Питання на співбесіді:**
+- *Чим `namespace` відрізняється від `scope module:`?* — `namespace :admin` змінює і шлях (`/admin`), і модуль
+  контролера, і імена хелперів (`admin_orders_path`); `scope module:` змінює лише модуль, шлях лишається.
+- *Що таке RESTful-маршрути в Rails?* — `resources` створює 7 стандартних дій (index, show, new, create, edit,
+  update, destroy) з відповідними HTTP-методами; `member`/`collection` додають свої дії.
+- *Як подивитися всі маршрути?* — `bin/rails routes` (можна з `-g orders`).
+
+### ActiveRecord і міграції над legacy-таблицями
+
+ActiveRecord — ORM: клас моделі = таблиця, об'єкт = рядок. Таблиці старого сайту мають свої імена й ключі, тому
+в моделях [Order](app/models/order.rb), [StockItem](app/models/stock_item.rb) задано `self.table_name` і
+`self.primary_key`; для довідників зі складеним ключем — `self.primary_key = %i[order_status_id language_id]`
+([OrderStatus](app/models/order_status.rb)). Колонка `type` у Rails зарезервована для STI (наслідування в одній
+таблиці), тому в [ProductionModel](app/models/production_model.rb) `self.inheritance_column = nil`.
+Схему legacy не змінюємо: перша міграція
+[LoadReferenceSchema](db/migrate/20261120000001_load_reference_schema.rb) просто виконує DDL еталону, а
+`schema_format = :sql` зберігає все в `db/structure.sql` (schema.rb втратив би MyISAM і enum-колонки).
+
+**Питання:**
+- *Навіщо `structure.sql` замість `schema.rb`?* — schema.rb описує схему Ruby-DSL і знає лише загальні типи;
+  structure.sql — це дамп SQL, він зберігає специфічне для БД (рушії, тригери, enum, складені ключі).
+- *Як працювати з legacy-таблицею, що не відповідає конвенціям?* — `self.table_name`, `self.primary_key`,
+  `foreign_key:`/`primary_key:` в асоціаціях, `alias_attribute` для зручних імен, `inheritance_column = nil`.
+- *Що робить `db:prepare`?* — створює БД, якщо її немає, і завантажує схему; якщо є — виконує нові міграції.
+
+### Асоціації та scopes
+
+`has_many`, `belongs_to`, `has_one … through:` описують зв'язки ([Order](app/models/order.rb):
+`has_one :manager, through: :manager_assignment`). Scope — іменований шматок запиту, який можна поєднувати:
+`Order.placed.with_status(18).newest_first`. Scope повертає `Relation`, запит іде в БД лише тоді, коли потрібні
+дані (лінива ініціалізація). Асоціація зі scope: `belongs_to :status, -> { localized }` бере назву статусу потрібною
+мовою.
+
+**Питання:**
+- *Чим scope відрізняється від методу класу?* — майже нічим; але scope завжди повертає Relation (навіть якщо
+  умова дала nil), тож ланцюжок не ламається.
+- *`belongs_to` обов'язковий за замовчуванням?* — так, з Rails 5 потрібен `optional: true`, якщо зв'язку може не бути
+  (у нас: старі таблиці MyISAM без зовнішніх ключів, товар міг зникнути —
+  [ProductOptionValue](app/models/product_option_value.rb)).
+- *Що таке `inverse_of`?* — підказка Rails, що дві асоціації описують один зв'язок; тоді в пам'яті це той самий
+  об'єкт, без зайвого запиту.
+
+### Strong parameters
+
+Контролер явно перелічує, які поля запиту читає: `params.permit(:firstname, …, lines: %i[productId quantity price])`
+([Api::V1::OrdersController](app/controllers/api/v1/orders_controller.rb)). Так користувач не підсуне поле, яке
+змінить щось зайве (mass assignment). У Rails 8 є `params.expect(:id)` — сувора версія `require`.
+
+**Питання:**
+- *Від чого захищають strong parameters?* — від mass assignment: `Model.new(params)` з невідфільтрованими полями
+  дозволив би записати, наприклад, `role: "Admin"`.
+- *Різниця `require` і `permit`?* — `require` вимагає наявність ключа (інакше 400), `permit` пропускає лише
+  перелічені ключі.
+
+### `before_action` і фільтри
+
+`before_action -> { authorize :orders, :manage? }` перевіряє роль перед кожною дією контролера. Логін теж фільтр:
+concern [Authentication](app/controllers/concerns/authentication.rb) додає `before_action :require_authentication`,
+а `allow_unauthenticated_access only: :login` його вимикає для входу. `after_action :verify_authorized` (Pundit)
+падає, якщо дія забула перевірити роль.
+
+**Питання:**
+- *Що станеться, якщо `before_action` викличе `render` або `redirect_to`?* — ланцюжок зупиниться, дія не виконається.
+- *Що таке concern?* — модуль з `ActiveSupport::Concern`, який підключають у кілька класів (`included do … end`
+  для макросів класу, `class_methods do … end` для методів класу).
+
+### Колбеки і чому їх мало
+
+Колбеки моделі (`before_save`, `after_commit`) зручні, але приховують побічні ефекти: хтось зберігає замовлення —
+і несподівано йде SMS. Тому тут колбек один: [LegacyTable](app/models/concerns/legacy_table.rb) лише заповнює
+порожні значення NOT NULL-колонок старих таблиць (дані, без побічних ефектів). SMS, Kafka, HTTP — тільки в сервісах
+і задачах. Події в Kafka йдуть після коміту транзакції: `ActiveRecord.after_all_transactions_commit`
+([OrderEvents](app/services/order_events.rb)).
+
+**Питання:**
+- *Чому не надсилати лист в `after_save`?* — транзакцію можуть відкотити, а лист уже пішов; плюс тести й імпорти
+  ненавмисно запускають побічні ефекти. Якщо колбек — то `after_commit`, а краще явний виклик у сервісі.
+- *Порядок колбеків при `save`?* — before_validation → validate → after_validation → before_save → before_create/update
+  → after_create/update → after_save → (після коміту) after_commit.
+
+### Транзакції та блокування
+
+[Stock::Adjust](app/services/stock/adjust.rb): `StockItem.transaction { StockItem.lock.find_by(…) }` — це
+`SELECT … FOR UPDATE`: другий запит на той самий рядок чекає, поки перша транзакція закінчиться, і бачить уже новий
+залишок. Тест [adjust_call_spec.rb](spec/services/stock/adjust_call_spec.rb) запускає дві зміни в двох потоках і
+перевіряє, що жодна не загубилася. Рядки блокуються в одному порядку (за id), щоб не було дедлоків
+([Production::RecordOperation](app/services/production/record_operation.rb)). Важливо: таблиці OpenCart — MyISAM,
+транзакцій у них немає; таблиці складу — InnoDB, тому блокування там працює.
+
+**Питання:**
+- *Песимістичне vs оптимістичне блокування?* — песимістичне (`lock`, `with_lock`) блокує рядок у БД, інші чекають;
+  оптимістичне (`lock_version`) нічого не блокує, а при конфлікті кидає `StaleObjectError`, і дію повторюють.
+  Песимістичне — коли конфлікти часті й коротка транзакція; оптимістичне — коли конфлікти рідкі.
+- *Що робить `with_lock`?* — відкриває транзакцію і перечитує рядок з `FOR UPDATE` (`lock!` усередині).
+- *Чи відкочується транзакція, якщо кинути виняток?* — так, будь-який виняток з блоку `transaction` робить ROLLBACK
+  і летить далі; `ActiveRecord::Rollback` відкочує мовчки.
+
+### N+1 і `includes`
+
+N+1 — коли список зі 100 замовлень робить ще 100 запитів за статусом кожного. `includes(:status, :manager)`
+підвантажує зв'язки кількома запитами наперед ([Api::V1::OrdersController#index](app/controllers/api/v1/orders_controller.rb)).
+Gem **Bullet** у тестах падає при N+1 (і при зайвому `includes`): так знайшлися два місця в цій фазі.
+
+**Питання:**
+- *`includes` vs `preload` vs `eager_load`?* — `preload` завжди окремі запити; `eager_load` — один запит з LEFT JOIN;
+  `includes` сам вибирає (JOIN, якщо на підвантажену таблицю є умова `references`/`where`).
+- *Як знайти N+1?* — логи (повторювані SELECT), Bullet, `strict_loading`.
+
+### Pundit (ролі)
+
+Політики в `app/policies`: [OrdersPolicy](app/policies/orders_policy.rb) — `manage?` для Admin і Manager.
+Контролер викликає `authorize :orders, :manage?`; при відмові Pundit кидає `NotAuthorizedError`, а `rescue_from`
+перетворює це на 403 без тіла (як у .NET). Меню адмінки показує ролі лише її модулі (`allowed?`).
+
+**Питання:**
+- *Що таке headless policy?* — політика без запису: `authorize :orders` замість `authorize @order`; підходить, коли
+  роль відкриває весь модуль.
+- *Як не забути перевірку?* — `after_action :verify_authorized` кидає помилку, якщо дія не викликала `authorize`.
+
+### RSpec і FactoryBot
+
+Тести в `spec/`: request specs б'ють по HTTP і перевіряють відповідь проти контракту (`expect_contract(200)` з
+[spec/support/contract.rb](spec/support/contract.rb), committee-rails). FactoryBot будує дані:
+`create(:order, order_status_id: 18)` ([spec/factories](spec/factories)). Транзакційні фікстури відкочують дані
+після кожного тесту — але MyISAM не відкочується, тому [myisam_cleanup.rb](spec/support/myisam_cleanup.rb)
+чистить ці таблиці.
+
+**Питання:**
+- *`let` vs `let!`?* — `let` лінивий (створюється при першому зверненні), `let!` — перед кожним тестом; якщо об'єкт у
+  тесті не використовується, краще `before { create(...) }`.
+- *`build` vs `create` у FactoryBot?* — `build` не зберігає в БД (швидше), `create` зберігає.
+- *Чим request spec відрізняється від controller spec?* — request spec проходить весь стек (маршрути, middleware,
+  cookie); controller specs у нових проєктах не рекомендують.
+
+### Сервіси й Result
+
+Логіка на кілька моделей — у `app/services`, один публічний метод `call`, явний результат
+([ApplicationService](app/services/application_service.rb)): `result.success?`, `result.value`, `result.error`.
+Правило однієї сутності — у моделі (`StockItem#adjust`), воно кидає `DomainError`, а `ApplicationService.call`
+перетворює його на помилку після відкату транзакції.
+
+**Питання:**
+- *Навіщо service objects, якщо є «fat model»?* — коли операція зачіпає кілька моделей (замовлення + склад + журнал),
+  у жодній моделі їй не місце; сервіс легко тестувати й викликати з API, HTML і задачі.
+
+---
+
+## Що прочитати після фази 1
+
+1. [config/routes.rb](config/routes.rb) → [Api::V1::OrdersController](app/controllers/api/v1/orders_controller.rb)
+   → [Orders::ChangeStatus](app/services/orders/change_status.rb) → [SewnStock](app/services/orders/status_handlers/sewn_stock.rb).
+2. [Stock::Adjust](app/services/stock/adjust.rb) і тест з потоками [adjust_call_spec.rb](spec/services/stock/adjust_call_spec.rb).
+3. [Authentication](app/controllers/concerns/authentication.rb) і [PasswordHasher](lib/password_hasher.rb).

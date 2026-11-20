@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Stops a commit that contains a secret. Enable once per clone: git config core.hooksPath .githooks
+# Without Docker the scan cannot run, so the commit is stopped too: better a stopped commit than a leaked key.
+set -euo pipefail
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "pre-commit: Docker is needed for the gitleaks secret scan; the commit was stopped." >&2
+  exit 1
+fi
+exec "$(git rev-parse --show-toplevel)/bin/gitleaks" staged

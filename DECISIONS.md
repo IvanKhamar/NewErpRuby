@@ -79,3 +79,31 @@ Decisions made while the user was away. Each: what, why, and the options conside
   (MyISAM engines, enum columns) that `schema.rb` would lose.
 - **Why:** database-first like the reference, but `bin/rails db:prepare` alone builds a working database for
   development, tests and CI.
+
+## D10. Services return a Result; models raise DomainError
+
+- **What:** `ApplicationService.call` returns `Result` (`success?`, `value`, `error`, `kind`). A single-entity rule in
+  a model (`StockItem#adjust`) raises `DomainError`; `call` turns it into a failure after the transaction rolled back.
+- **Why:** the brief asks for an explicit success/failure result; raising inside a model keeps the transaction
+  rollback automatic. **Options:** dry-monads (one more gem, more to explain), exceptions only (like the reference).
+
+## D11. Small contract details kept from the reference
+
+- `GET /orders/{id}` for an unknown order answers 404 with the English title "Not Found" (the reference does it
+  this way for this one endpoint); the others use "Не знайдено".
+- `GET /health` answers `Healthy` as plain text.
+- The customer risk of a new order has no `sharedIp` part (the reference also searches many customers behind one IP
+  address); the field is always `null`, which the contract allows. Listed as a gap.
+
+## D12. CI runs in the ruby:4.0.10 container
+
+- **What:** the test job uses `container: ruby:4.0.10` with MySQL and Redis services, not `ruby/setup-ruby`.
+- **Why:** Ruby 4.0.10 came out on 2026-11-19; a prebuilt binary for setup-ruby may not exist yet, and a failed CI
+  run e-mails the user. The container is the same image as `Dockerfile.dev`, so local and CI runs match.
+
+## D13. Tests and MyISAM
+
+- **What:** transactional fixtures roll back InnoDB tables; after each example the non-empty MyISAM tables
+  (OpenCart's) are emptied (`spec/support/myisam_cleanup.rb`). The concurrency test runs without a transaction
+  and removes its own rows.
+- **Why:** MyISAM ignores transactions, so rows written by a test would leak into the next one.

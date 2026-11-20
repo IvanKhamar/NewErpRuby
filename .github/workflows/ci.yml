@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # Tests and checks run in the same ruby image as Dockerfile.dev, so CI and local runs use one Ruby build.
+  test:
+    runs-on: ubuntu-latest
+    container: ruby:4.0.10
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_password
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1"
+          --health-interval 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+    env:
+      RAILS_ENV: test
+      CI: "true"
+      # Test values only: the throwaway CI database, never a real secret.
+      NEWERP_DB_HOST: mysql
+      NEWERP_DB_PORT: 3306
+      NEWERP_DB_USER: root
+      NEWERP_DB_PASSWORD: ci_root_password
+      REDIS_URL: redis://redis:6379/0
+    steps:
+      - uses: actions/checkout@v7
+      - name: MySQL client (loads db/structure.sql)
+        run: |
+          apt-get update -qq && apt-get install -y --no-install-recommends default-mysql-client
+          printf '[client]\nskip-ssl-verify-server-cert\n' > /etc/mysql/conf.d/ci-client.cnf
+      - uses: actions/cache@v5
+        with:
+          path: vendor/bundle
+          key: gems-${{ runner.os }}-ruby-4.0.10-${{ hashFiles('Gemfile.lock') }}
+      - run: bundle config set path vendor/bundle && bundle install --jobs 4
+      - run: bin/rails db:create db:test:prepare
+      - run: bundle exec rubocop
+      - run: bundle exec rspec
+      - run: bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error
+      - run: bin/bundler-audit
+      - run: bin/importmap audit
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

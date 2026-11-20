@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Secret scan with gitleaks, run through Docker (no install needed).
+#   bin/gitleaks          scans the whole git history (run before every push)
+#   bin/gitleaks staged   scans only the staged changes (the pre-commit hook uses this)
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+# Docker Desktop on Windows needs a Windows path for the volume; Git Bash gives one with pwd -W.
+repo="$(pwd -W 2>/dev/null || pwd)"
+image="zricethezav/gitleaks:latest"
+
+if [ "${1:-}" = "staged" ]; then
+  MSYS_NO_PATHCONV=1 docker run --rm -v "$repo:/repo" -w /repo "$image" git --staged --redact --no-banner /repo
+else
+  MSYS_NO_PATHCONV=1 docker run --rm -v "$repo:/repo" -w /repo "$image" git --redact --no-banner -v /repo
+fi

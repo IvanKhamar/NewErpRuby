@@ -1,0 +1,81 @@
+# RuboCop with the Rails, RSpec and performance plugins (instead of rubocop-rails-omakase, see DECISIONS.md D3).
+plugins:
+  - rubocop-rails
+  - rubocop-rspec
+  - rubocop-performance
+
+AllCops:
+  TargetRubyVersion: 4.0
+  NewCops: enable
+  Exclude:
+    - bin/**/*
+    - db/structure.sql
+    - db/schema.rb
+    - vendor/**/*
+    - tmp/**/*
+    - node_modules/**/*
+
+Layout/LineLength:
+  Max: 120
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/Documentation:
+  Enabled: false # classes start with a comment on why they exist; module-level docs everywhere would be noise
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Metrics/MethodLength:
+  Max: 25
+Metrics/AbcSize:
+  Max: 70
+Metrics/ClassLength:
+  Max: 200
+Metrics/BlockLength:
+  Exclude:
+    - spec/**/*
+    - config/**/*
+    - db/seeds.rb
+
+# The legacy tables have no foreign keys (MyISAM) and Rails' has_many :dependent would delete rows the old site
+# still owns; dependent: nil is written out on purpose.
+Rails/HasManyOrHasOneDependent:
+  Enabled: false
+
+RSpec/ExampleLength:
+  Max: 25
+RSpec/MultipleExpectations:
+  Max: 8
+RSpec/MultipleMemoizedHelpers:
+  Max: 10
+RSpec/DescribeClass:
+  Exclude:
+    - spec/requests/**/*
+    - spec/models/domain_rules_spec.rb
+
+# Services keep their arguments in initialize; the base class has no state to set up.
+Lint/MissingSuper:
+  AllowedParentClasses:
+    - ApplicationService
+
+# Business rules read best as one method with their checks in the reference's order; the limits are a bit wider.
+Metrics/CyclomaticComplexity:
+  Max: 14
+Metrics/PerceivedComplexity:
+  Max: 14
+Metrics/ParameterLists:
+  CountKeywordArgs: false
+
+# Texts for people are Ukrainian and live next to the rule that makes them, as in the other three versions.
+Rails/I18nLocaleTexts:
+  Enabled: false
+
+# Column names of the legacy tables (address_1, address_2) are kept as they are.
+Naming/VariableNumber:
+  CheckSymbols: false
+
+Rails/Output:
+  Exclude:
+    - db/seeds.rb
