@@ -39,6 +39,22 @@ http://localhost:3000/app as `admin` / `dev`.
 
 **Read in LEARNING.md:** phase 2.
 
+## Phase 3 — integrations (done, 2026-11-20)
+
+- Clients in `app/clients` on Faraday (timeouts; retries only where a repeat is safe), stubs without keys:
+  LiqPay (signed checkout link, status), PrivatBank (statement import, payment list), SMSClub (send, log),
+  Checkbox (fiscalize a receipt: sign-in, token renewal on 401, sale), Nova Post International (waybill abroad with
+  JWT auth and the customs checks).
+- Every client is tested with WebMock only. New ENV names are in `.env.example`.
+- Gaps on purpose (DECISIONS.md D15): bank auto-linking, the SMS waybill check, cashbox shifts and reports,
+  HS code search.
+- Checks: 98 RSpec examples, RuboCop, Brakeman, bundler-audit, importmap audit, gitleaks: all green.
+
+**Check by hand:** with real sandbox keys in `.env` (never committed), try `POST /orders/{id}/liqpay-link` and open
+the link; everything else needs real accounts.
+
+**Read in LEARNING.md:** phase 3.
+
 ## Next
 
-Phase 3: clients for Nova Post International, LiqPay, PrivatBank, Checkbox, SMSClub.
+Phase 4: sales report, Excel export and import of stock, partner XML feeds, HTML sanitizing.
