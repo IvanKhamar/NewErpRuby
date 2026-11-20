@@ -1,0 +1,33 @@
+/* The same look as the ERB admin pages (app/assets/stylesheets/application.css). */
+:root {
+  --fg: #1d2330; --muted: #667085; --line: #d9dee7; --bg: #f6f7f9; --card: #fff; --accent: #2f5bd3;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--fg); background: var(--bg);
+}
+body { margin: 0; }
+main { max-width: 1100px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+.topbar { display: flex; gap: 1.5rem; align-items: center; padding: .75rem 1.5rem; background: var(--card);
+          border-bottom: 1px solid var(--line); }
+.topbar nav { display: flex; gap: 1rem; flex: 1; }
+.topbar a { color: var(--fg); text-decoration: none; }
+.topbar .who { color: var(--muted); display: flex; gap: .5rem; align-items: center; }
+a { color: var(--accent); }
+h1 { font-size: 1.5rem; } h2 { font-size: 1.15rem; margin-top: 2rem; }
+table { width: 100%; border-collapse: collapse; background: var(--card); }
+th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; font-size: .85rem; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr.low td { background: #fff4e5; }
+.badge { padding: .1rem .5rem; border-radius: 1rem; color: #fff; background: var(--badge, #888); font-size: .85rem; }
+.flash { padding: .6rem .8rem; border-radius: .4rem; }
+.flash.ok { background: #e7f6ec; } .flash.warn { background: #fff4e5; } .flash.error { background: #fdecec; }
+.filters, .inline { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin: 1rem 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+.narrow { max-width: 340px; margin: 4rem auto; display: grid; gap: .5rem; }
+.narrow form { display: grid; gap: .5rem; }
+.muted { color: var(--muted); }
+input, select, button { font: inherit; padding: .35rem .5rem; }
+input[type=submit], button { background: var(--accent); color: #fff; border: 0; border-radius: .3rem; cursor: pointer; }
+button.link { background: none; color: var(--accent); padding: 0; }
+.pager { display: flex; gap: 1rem; }
+.pager button { background: none; color: var(--accent); padding: 0; }
+.topbar nav a { color: var(--fg); }

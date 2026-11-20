@@ -23,13 +23,15 @@ Built with Claude Code as an AI pair programmer; I reviewed and tested the chang
 | 4 | Sales report, Excel stocktaking (caxlsx + roo), partner XML feed (Builder), HTML sanitizing (FAQ) | done |
 | 5 | Order events to Kafka (WaterDrop), Kafka in a compose profile | done |
 | 6 | **New module:** refund recipient check (IBAN mod 97 + name matching, audit log) | done |
+| 7 | React + TypeScript UI at `/ui` (Vite, types from the contract, TanStack Query): login, orders, status change | done |
 
-Tests: 137 examples (the number `bundle exec rspec` prints). The ported endpoints and what is left out are listed in
+Tests: 139 RSpec examples (the number `bundle exec rspec` prints) and 8 frontend tests (Vitest). Next phases are in
+[ROADMAP.md](ROADMAP.md). The ported endpoints and what is left out are listed in
 [PLAN.md](PLAN.md); decisions made on the way are in [DECISIONS.md](DECISIONS.md).
 
 ## Stack
 
-Ruby 4.0.10 · Rails 8.1.4 · MySQL 8.0 (Trilogy driver) · Redis 7 · Sidekiq 8.1 · Hotwire Turbo + importmap ·
+React 19 + TypeScript 6 (Vite, React Router, TanStack Query, openapi-fetch, Vitest, MSW) · Ruby 4.0.10 · Rails 8.1.4 · MySQL 8.0 (Trilogy driver) · Redis 7 · Sidekiq 8.1 · Hotwire Turbo + importmap ·
 Alba · Pundit · RSpec 8 (rspec-rails), FactoryBot, Faker, shoulda-matchers, WebMock, committee-rails ·
 RuboCop (rails, rspec, performance) · Brakeman · bundler-audit · gitleaks · Docker Compose · GitHub Actions
 
@@ -41,6 +43,7 @@ Everything runs in Docker; no Ruby is needed on the machine (this repo was built
 docker compose up                                  # MySQL, Redis, the app and Sidekiq; http://localhost:3000
 docker compose run --rm app bin/rails db:seed      # invented demo data (once, on an empty database)
 docker compose --profile kafka up                  # also Kafka; set NEWERP_KAFKA_BROKERS=kafka:9092 in .env
+docker compose up ui                               # the React app with hot reload: http://localhost:5173/ui/
 ```
 
 Then open http://localhost:3000/app and log in as `admin`, `sklad` or `manager1` with the demo password `dev`
@@ -74,6 +77,7 @@ db/
   reference_schema.sql   the reference's table DDL, loaded by the first migration
   structure.sql          the full schema (legacy tables + own migrations)
 spec/            requests (with contract checks), services, models
+frontend/        React + TypeScript app (Vite), built into public/ui and served at /ui
 ```
 
 ## How it differs from the Python version, and why

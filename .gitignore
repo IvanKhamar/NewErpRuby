@@ -35,3 +35,6 @@ Thumbs.db
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+
+# The React build (frontend/ writes it with `npm run build`)
+/public/ui

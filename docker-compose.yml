@@ -33,6 +33,23 @@ services:
     <<: *app
     command: bundle exec sidekiq
 
+  # The React app with hot reload on http://localhost:5173/ui/. Vite forwards the API paths to the app service,
+  # so the login cookie works as on one site. node_modules live in a volume: the Linux build of the packages must
+  # not mix with a Windows one from the host.
+  ui:
+    image: node:24
+    working_dir: /app/frontend
+    command: bash -c "npm ci && npm run dev"
+    environment:
+      API_URL: http://app:3000
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - ui-node-modules:/app/frontend/node_modules
+    depends_on:
+      - app
+
   mysql:
     image: mysql:8.0
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
@@ -79,4 +96,5 @@ services:
       retries: 20
 
 volumes:
+  ui-node-modules:
   mysql-data:

@@ -94,8 +94,19 @@ and "Олена Коваленко" gives `close_match` (the register has the pa
 
 **Read in LEARNING.md:** phase 6.
 
-## What is left
+## Phase 7 — React + TypeScript foundation (done, 2026-11-20)
 
-- The gaps listed in PLAN.md (catalog, marketing, customers, cashbox shifts, purchase orders, sewing plan and more).
-- The refund check uses a local register of accounts; a real bank's verification API would replace
-  `RefundKnownAccount` lookups behind the same service.
+- The follow-up plan is in ROADMAP.md (phases 7–12); only phase 7 is done.
+- `frontend/`: Vite 8, React 19, TypeScript 6, React Router, TanStack Query; types generated from
+  `docs/openapi.json`, typed client (openapi-fetch). Login, orders list (filters in the URL, paging), order card with
+  the status change and the warnings of other modules.
+- Served by Rails at `/ui` after `npm run build`; `docker compose up ui` runs Vite with hot reload on port 5173.
+- Checks: 8 frontend tests (Vitest, Testing Library, MSW), ESLint, `tsc`, build; a new CI job. Rails: 139 RSpec
+  examples and the other checks green. Checked by hand in a browser: login as `manager1`, status change of a demo
+  order, history updated.
+
+**Read in LEARNING.md:** phase 7.
+
+## Next
+
+Phase 8 (ROADMAP.md): stock, production and the refund check in `/ui`, with an OpenAPI file for the refund endpoints.

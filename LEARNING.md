@@ -458,3 +458,61 @@ WaterDrop. Ключ повідомлення — id замовлення: одн
 [Refunds::Create](app/services/refunds/create.rb) блокує рядок перевірки (`lock`) у транзакції: два одночасні
 повернення з однієї перевірки йдуть по черзі, і другий бачить суму першого. Повернення можливе лише після `match` або
 явного `confirmCloseMatch` оператора при `close_match`. Кожна перевірка, навіть невдала, пишеться в журнал аудиту.
+
+---
+
+## Фаза 7. React + TypeScript поверх того самого API
+
+Код у [frontend/](frontend). Запуск: `docker compose up ui` → http://localhost:5173/ui/ (з гарячим перезавантаженням),
+або `npm run build` у `frontend/` — тоді Rails віддає готовий застосунок на http://localhost:3000/ui/.
+
+### Типи з контракту
+
+`npm run api:types` генерує [schema.d.ts](frontend/src/api/schema.d.ts) з `docs/openapi.json` (openapi-typescript),
+а [client.ts](frontend/src/api/client.ts) — це `openapi-fetch`, типізований цими типами: `api.GET("/orders/{order_id}",
+{ params: { path: { order_id } } })` знає і шлях, і параметри, і форму відповіді. Перейменоване поле в контракті —
+помилка компіляції, а не баг у браузері. Тестові відповіді MSW теж типізовані контрактом
+([server.ts](frontend/src/test/server.ts)).
+
+**Питання:**
+- *Як фронтенд і бекенд не розходяться в форматі даних?* — один контракт (OpenAPI): бекенд перевіряється проти нього
+  в request specs (committee), фронтенд генерує з нього типи.
+
+### Стан сервера: TanStack Query
+
+Дані з API — не «стан компонента», а кеш: `useQuery({ queryKey, queryFn })` завантажує, кешує, показує стан
+(`isPending`, `isError`), а `useMutation` + `invalidateQueries(["orders"])` після зміни статусу оновлює і картку, і
+список ([OrderPage.tsx](frontend/src/pages/OrderPage.tsx)). `placeholderData: keepPreviousData` лишає стару сторінку
+списку, поки вантажиться наступна.
+
+**Питання:**
+- *Навіщо TanStack Query, якщо є `useEffect` + `fetch`?* — кеш, повтори, відміна застарілих запитів, оновлення після
+  мутацій, стани завантаження — все це довелося б писати руками й з помилками (гонки відповідей).
+- *`queryKey`?* — ключ кешу; ті самі ключі — ті самі дані; `invalidateQueries` за префіксом оновлює всі пов'язані.
+
+### Маршрути й стан в URL
+
+React Router: `createBrowserRouter` з `basename: "/ui"` ([App.tsx](frontend/src/App.tsx)). Фільтри списку живуть у
+URL (`useSearchParams`), тож відфільтрований список можна зберегти в закладки, а кнопка «Назад» працює. Сторінки за
+логіном загорнуті в `SignedInLayout`: немає сесії — `<Navigate to="/login">`. Rails на будь-який `/ui/...` віддає
+`index.html` ([UiController](app/controllers/ui_controller.rb)), щоб перезавантаження сторінки не давало 404.
+
+### Логін без CORS
+
+Той самий cookie `newerp.auth` (HttpOnly, SameSite=Strict). У розробці Vite проксує шляхи API на Rails
+([vite.config.ts](frontend/vite.config.ts)), у продакшні Rails сам віддає збірку — браузер завжди бачить одне джерело,
+тож CORS не потрібен, а JavaScript не бачить cookie взагалі (захист від крадіжки сесії через XSS).
+
+**Питання:**
+- *Де зберігати токен у SPA?* — найбезпечніше — HttpOnly cookie з SameSite (JS його не прочитає); localStorage
+  доступний будь-якому скрипту на сторінці.
+
+### Тести фронтенду
+
+Vitest + Testing Library + MSW ([App.test.tsx](frontend/src/App.test.tsx)): тест рендерить увесь застосунок на
+потрібному шляху, клікає як користувач (`userEvent`), шукає елементи за роллю й підписом (`getByRole`,
+`getByLabelText` — так само, як їх бачить скрінрідер), а MSW відповідає на запити замість Rails.
+`onUnhandledFrame: "error"` — тест падає, якщо компонент робить запит, якого тест не очікував.
+
+Цікава пастка: `openapi-fetch` брав `fetch` один раз при імпорті, а MSW підміняє `fetch` пізніше — тому клієнт
+отримує `fetch` при кожному виклику.

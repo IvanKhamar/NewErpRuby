@@ -7,3 +7,5 @@ tmp/*
 coverage
 .idea
 .vscode
+frontend/node_modules
+public/ui
