@@ -1,0 +1,33 @@
+# Secrets: never in git (the repository is public).
+.env
+.env.*
+!.env.example
+/config/master.key
+/config/credentials/*.key
+*.pem
+
+# Runtime and build output
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+/tmp/pids/*
+/storage/*
+!/storage/.keep
+/public/assets
+/coverage/
+/.bundle
+/vendor/bundle
+.byebug_history
+.rspec_status
+
+# Database dumps
+*.sql.gz
+*.dump
+
+# Editors and local tool settings
+.idea/
+.vscode/
+.claude/settings.local.json
+.DS_Store
+Thumbs.db
