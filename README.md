@@ -19,12 +19,12 @@ Built with Claude Code as an AI pair programmer; I reviewed and tested the chang
 |---|---|---|
 | 1 | Rails app, Docker, legacy schema, seeds, login and roles, orders, stock with row locks, BOMs and production, contract tests, admin pages, CI | done |
 | 2 | Sidekiq + cron: pre-orders, competitor prices with `Regexp.timeout` and an SSRF-safe fetcher, delivery tracking | done |
-| 3 | Clients: Nova Post International, LiqPay, PrivatBank, Checkbox, SMSClub | planned |
+| 3 | Clients: Nova Post International, LiqPay, PrivatBank, Checkbox, SMSClub (one flow each, WebMock tests) | done |
 | 4 | Sales report, Excel import and export, partner XML feeds, HTML sanitizing | planned |
 | 5 | Order events to Kafka (WaterDrop) | planned |
 | 6 | **New module:** refund recipient check (IBAN mod 97 + name matching) | planned |
 
-Tests: 86 examples (the number `bundle exec rspec` prints). The ported endpoints and what is left out are listed in
+Tests: 98 examples (the number `bundle exec rspec` prints). The ported endpoints and what is left out are listed in
 [PLAN.md](PLAN.md); decisions made on the way are in [DECISIONS.md](DECISIONS.md).
 
 ## Stack

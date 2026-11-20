@@ -121,3 +121,19 @@ Decisions made while the user was away. Each: what, why, and the options conside
   with a backreference, which turns memoization off, to prove the timeout really fires.
 - **Lesson:** `rubocop -A` rewrote `!ip_range.include?(ip)` into `ip_range.exclude?(ip)`, which IPAddr does not have.
   The tests caught it; those two lines now carry an inline exemption with the reason.
+
+## D15. Phase 3: one meaningful flow per outside service
+
+- **LiqPay:** checkout link and payment status (`/orders/{id}/liqpay-link`, `/orders/{id}/liqpay-status`).
+- **PrivatBank:** statement import and the payment list (`/payments/bank/import`, `/payments/bank`). The automatic
+  linking of payments to orders after the import is not ported (`autoLinked` is optional in the contract and left out).
+- **SMSClub:** send to the order's phone and the order's SMS log. The reference's check that a waybill number in
+  the text belongs to the same order (`ttnMismatch`) is not ported; the field is always `null`.
+- **Checkbox:** fiscalizing a receipt Checkbox has not accepted (`/cashbox/cheques/{id}/fiscalize`); opening and
+  closing shifts, X/Z reports are gaps. ChequeDto's `warehouse` and `requisites` are `null` for the same reason.
+- **Nova Post International:** creating a waybill abroad (`/orders/{id}/shipment/international`); HS code search and
+  deleting are gaps.
+- **Keys:** all from ENV (`.env.example` lists the names). The Checkbox keys the old site keeps in
+  `dd_cashbox_user` are never read (`ignored_columns`), as in the reference.
+- **Retries:** only for requests safe to repeat (GET, Nova Poshta tracking). A sale, a waybill and an SMS are never
+  retried automatically: a repeat would make a duplicate.
